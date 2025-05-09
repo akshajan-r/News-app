@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="material-container">
+  <div class="hero">
+    <div class="hero-image">
+      <img src="{{ url_for('static', filename='hero.jpg') }}" alt="Hero Image">
+      <div class="hero-overlay"></div>
+    </div>
+    <div class="hero-text">
+      <h1>The News You <span class="accent">Deserve</span></h1>
+      <p>Discover what you want to discover without the bias.</p>
+      <button class="material-button">Explore News</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">

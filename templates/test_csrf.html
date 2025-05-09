@@ -1,0 +1,4 @@
+<form method="POST" action="{{ url_for('test_csrf') }}">
+    {{ form.hidden_tag() }}
+    <button type="submit">Test CSRF</button>
+</form> 

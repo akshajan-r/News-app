@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bookmarks-container">
+    <h1>Your Bookmarks</h1>
+    <div class="bookmarks-grid" id="bookmarks-container">
+        <!-- Bookmarks will be loaded here -->
+    </div>
+</div>
+
+<style>
+.bookmarks-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.bookmarks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.bookmark-card {
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.bookmark-card:hover {
+    transform: translateY(-4px);
+}
+
+.bookmark-meta {
+    margin: 8px 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.bookmark-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.btn-read {
+    background: var(--mdc-theme-primary);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.btn-remove {
+    background: none;
+    border: none;
+    color: var(--mdc-theme-error);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-remove:hover {
+    background: rgba(var(--mdc-theme-error-rgb), 0.1);
+}
+
+.no-bookmarks {
+    text-align: center;
+    padding: 40px;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.7;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', loadBookmarks);
+
+function getTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+}
+
+function loadBookmarks() {
+    fetch('/get_bookmarks')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('bookmarks-container');
+            if (data.bookmarks.length === 0) {
+                container.innerHTML = '<div class="no-bookmarks">No bookmarks yet! Start saving articles you want to read later.</div>';
+                return;
+            }
+            
+            container.innerHTML = data.bookmarks.map(bookmark => `
+                <div class="bookmark-card">
+                    <h3>
+                        <a href="/view_article?url=${encodeURIComponent(bookmark.url)}&title=${encodeURIComponent(bookmark.title)}"
+                           class="article-title">
+                            ${bookmark.title}
+                        </a>
+                    </h3>
+                    <div class="bookmark-meta">
+                        <span>Saved ${getTimeAgo(bookmark.bookmarked_at)}</span>
+                    </div>
+                    <div class="bookmark-actions">
+                        <a href="/view_article?url=${encodeURIComponent(bookmark.url)}&title=${encodeURIComponent(bookmark.title)}" 
+                           class="btn-read">
+                            Read Article
+                        </a>
+                        <button onclick="removeBookmark('${bookmark.url}')" class="btn-remove">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error loading bookmarks:', error);
+            document.getElementById('bookmarks-container').innerHTML = 
+                '<div class="error">Failed to load bookmarks</div>';
+        });
+}
+
+function removeBookmark(url) {
+    fetch('/remove_bookmark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ url })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            loadBookmarks();  // Refresh the bookmarks list
+        }
+    })
+    .catch(error => {
+        console.error('Error removing bookmark:', error);
+    });
+}
+</script>
+{% endblock %} 

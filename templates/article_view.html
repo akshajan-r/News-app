@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="article-container">
+    {% if mode == 'prompt' %}
+        <div class="prompt-card">
+            <h2>{{ title }}</h2>
+            <p class="notice">This article cannot be displayed directly within the app due to website restrictions.</p>
+            <div class="options">
+                <p>How would you like to read this article?</p>
+                <div class="option-buttons">
+                    <a href="{{ url_for('view_article', url=original_url, title=title, mode='reader') }}" 
+                       class="option-btn reader">
+                        Read in Minimal View
+                        <small>A clean, ad-free reading experience</small>
+                    </a>
+                    <a href="{{ url_for('view_article', url=original_url, title=title, mode='redirect') }}" 
+                       class="option-btn original">
+                        Visit Original Website
+                        <small>View the article on its source website</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% elif mode == 'reader' %}
+        <div class="reader-container">
+            <div class="reader-content">
+                <div class="article-meta">
+                    <a href="{{ url_for('get_news') }}" class="back-link">← News</a>
+                    <div class="reading-info">
+                        <span class="reading-time"></span>
+                        <a href="{{ original_url }}" class="source-link">source ↗</a>
+                    </div>
+                </div>
+                <h1>{{ title }}</h1>
+                <div class="article-progress">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="article-content">
+                    {{ content | safe }}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* Update the container styles */
+.article-container {
+    max-width: min(90%, 800px);
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    background-color: var(--mdc-theme-background);
+}
+
+.prompt-card {
+    background: var(--mdc-theme-surface);
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.notice {
+    color: #dc3545;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+.options {
+    margin-top: 30px;
+}
+
+.option-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.option-btn {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(var(--mdc-theme-on-surface-rgb), 0.1);
+}
+
+.option-btn small {
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+.option-btn.reader {
+    background: var(--mdc-theme-primary);
+    color: white;
+}
+
+.option-btn.original {
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+}
+
+.option-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Reader mode styles */
+.reader-container {
+    max-width: min(90%, 800px);
+    margin: 2rem auto;
+    padding: 0 2rem;
+    font-family: 'Georgia', serif;
+}
+
+.reader-content {
+    background: var(--mdc-theme-surface);
+    padding: clamp(2rem, 5vw, 3rem);
+    border-radius: 12px;
+    line-height: 1.8;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    position: sticky;
+    top: 0;
+    background: var(--mdc-theme-surface);
+    z-index: 10;
+    border-bottom: 1px solid rgba(var(--mdc-theme-on-surface-rgb), 0.1);
+    backdrop-filter: blur(8px);
+}
+
+.back-link, .source-link {
+    color: var(--mdc-theme-on-surface);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.back-link:hover, .source-link:hover {
+    opacity: 1;
+    color: var(--mdc-theme-primary);
+}
+
+h1 {
+    font-size: clamp(2rem, 4vw, 2.5rem);
+    line-height: 1.3;
+    margin-bottom: 2rem;
+    font-weight: 700;
+    color: var(--mdc-theme-on-surface);
+    letter-spacing: -0.02em;
+}
+
+.article-content {
+    font-size: clamp(1.1rem, 2vw, 1.2rem);
+    line-height: 1.85;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.95;
+}
+
+.article-content p {
+    margin-bottom: 1.8rem;
+    max-width: 70ch;
+}
+
+.article-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 2rem auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+.article-content blockquote {
+    border-left: 4px solid var(--mdc-theme-primary);
+    margin: 2rem 0;
+    padding: 1.5rem;
+    font-style: italic;
+    background: rgba(var(--mdc-theme-on-surface-rgb), 0.03);
+    border-radius: 0 12px 12px 0;
+}
+
+[data-theme="dark"] .reader-content {
+    background: var(--mdc-theme-surface);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .article-content {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] img {
+    filter: brightness(0.95) contrast(1.05);
+}
+.reading-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.reading-time {
+    opacity: 0.7;
+}
+
+.article-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(var(--mdc-theme-on-surface-rgb), 0.1);
+    z-index: 100;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--mdc-theme-primary);
+    transition: width 0.1s ease;
+}
+
+.article-content {
+    font-size: clamp(1.1em, 2vw, 1.25em);
+    line-height: 1.9;
+    letter-spacing: -0.003em;
+    color: var(--mdc-theme-on-surface);
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    font-family: 'Georgia', serif;
+}
+
+.article-content a {
+    color: var(--mdc-theme-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 0.1em;
+    text-underline-offset: 0.2em;
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.article-content a:hover {
+    color: var(--mdc-theme-secondary);
+    text-decoration-color: var(--mdc-theme-secondary);
+}
+
+.article-content ul, .article-content ol {
+    margin: 1.8em 0;
+    padding-left: 1.8em;
+}
+
+.article-content li {
+    margin-bottom: 0.8em;
+    line-height: 1.7;
+}
+
+.article-content li:last-child {
+    margin-bottom: 0;
+}
+
+.article-content pre {
+    background: rgba(var(--mdc-theme-on-surface-rgb), 0.04);
+    padding: 1.2em;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.8em 0;
+    border: 1px solid rgba(var(--mdc-theme-on-surface-rgb), 0.1);
+}
+
+.article-content code {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    background: rgba(var(--mdc-theme-on-surface-rgb), 0.04);
+}
+
+.article-content h2, .article-content h3 {
+    margin: 2em 0 1em;
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--mdc-theme-on-surface);
+    letter-spacing: -0.01em;
+}
+
+.article-content blockquote {
+    border-left: 4px solid var(--mdc-theme-primary);
+    margin: 2em 0;
+    padding: 1em 1.5em;
+    font-style: italic;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.9;
+    background: rgba(var(--mdc-theme-on-surface-rgb), 0.03);
+    border-radius: 0 8px 8px 0;
+}
+
+.article-content p {
+    margin-bottom: 1.8em;
+    max-width: 70ch;
+}
+
+.article-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 2em 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.article-content img:hover {
+    transform: scale(1.01);
+}
+
+/* Highlight text selection */
+::selection {
+    background: rgba(var(--mdc-theme-primary-rgb), 0.2);
+}
+
+/* Improve table display on mobile */
+.article-content table {
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+    margin: 1em 0;
+}
+
+/* Media queries for different screen sizes */
+@media (max-width: 768px) {
+    .article-container {
+        padding: 10px;
+    }
+    
+    .reader-content {
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .article-meta {
+        padding: 10px 0;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+    .reader-content {
+        padding: 12px;
+    }
+    
+    .article-meta {
+        font-size: 0.8em;
+    }
+}
+
+/* For large screens */
+@media (min-width: 1200px) {
+    .article-container {
+        max-width: 800px;  /* Cap the maximum width */
+    }
+}
+
+/* For extra-wide screens */
+@media (min-width: 1600px) {
+    .article-container {
+        max-width: 900px;  /* Slightly wider on very large screens */
+    }
+}
+
+/* Improve readability in dark mode */
+[data-theme="dark"] .reader-content {
+    color: #E1E1E1;
+}
+
+[data-theme="dark"] .article-content {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] .article-meta {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] img {
+    filter: brightness(0.9);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate and display reading time
+    const content = document.querySelector('.article-content');
+    if (content) {
+        const words = content.textContent.trim().split(/\s+/).length;
+        const readingTime = Math.ceil(words / 200); // Assuming 200 words per minute
+        document.querySelector('.reading-time').textContent = `${readingTime} min read`;
+    }
+
+    // Reading progress bar
+    const progressBar = document.querySelector('.progress-bar');
+    window.addEventListener('scroll', () => {
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrolled = (window.scrollY / docHeight) * 100;
+        progressBar.style.width = `${scrolled}%`;
+    });
+
+    // Lazy load images with fade-in effect
+    const images = document.querySelectorAll('.article-content img');
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.style.opacity = '1';
+                observer.unobserve(img);
+            }
+        });
+    });
+
+    images.forEach(img => {
+        img.style.opacity = '0';
+        img.style.transition = 'opacity 0.5s ease';
+        imageObserver.observe(img);
+    });
+});
+</script>
+{% endblock %}

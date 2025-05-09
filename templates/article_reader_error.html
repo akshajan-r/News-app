@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-container text-center my-5">
+    <div class="card border-0 shadow">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="card-title mb-0">{{ title }}</h2>
+                {% if current_user.is_authenticated %}
+                <button onclick="toggleBookmark('{{ original_url }}', '{{ title }}', 'general', this)" 
+                        class="btn btn-outline-primary">
+                    <i class="far fa-bookmark me-2"></i>
+                    Add to Bookmarks
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="alert border-warning bg-warning-subtle text-warning-emphasis mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ error_message }}
+            </div>
+            
+            <div class="d-grid gap-3">
+                <a href="{{ original_url }}" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt me-2"></i>
+                    Visit Original Article
+                </a>
+                
+                <button onclick="window.history.back()" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Go Back
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleBookmark(url, title, category, button) {
+    fetch('/toggle_bookmark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            url: url,
+            title: title,
+            category: category
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Change button text and icon
+            if (data.bookmarked) {
+                button.innerHTML = '<i class="fas fa-bookmark me-2"></i>Bookmarked';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-primary');
+            } else {
+                button.innerHTML = '<i class="far fa-bookmark me-2"></i>Add to Bookmarks';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-outline-primary');
+            }
+            // Show toast message
+            showToast(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error saving bookmark');
+    });
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+
+<style>
+.error-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.card {
+    background-color: var(--bs-card-bg);
+}
+
+/* Ensure text colors follow theme */
+.card-title {
+    color: var(--bs-emphasis-color);
+}
+
+/* Alert customization */
+.alert {
+    border-width: 2px;
+}
+
+[data-bs-theme="dark"] .alert {
+    background-color: rgba(var(--bs-warning-rgb), 0.15) !important;
+    border-color: var(--bs-warning) !important;
+    color: var(--bs-warning) !important;
+}
+
+/* Toast notification */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--bs-dark);
+    color: white;
+    padding: 1rem;
+    border-radius: 4px;
+    z-index: 1000;
+    animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(20px); }
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container">
+    <h1>Admin Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Users</h3>
+            <div class="stat-value">{{ users|length }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Total Articles Read</h3>
+            <div class="stat-value">{{ total_articles }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Active Users (24h)</h3>
+            <div class="stat-value">{{ active_users }}</div>
+        </div>
+    </div>
+
+    <div class="users-table">
+        <h2>User Management</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Last Login</th>
+                    <th>Admin Status</th>
+                    <th>Theme</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
+                    <td>{{ '✓' if user.is_admin else '✗' }}</td>
+                    <td>
+                        <form action="{{ url_for('set_user_theme', user_id=user.id) }}" method="POST" class="inline-form theme-select-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="theme" class="theme-select" onchange="this.form.submit()">
+                                <option value="">Default</option>
+                                <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light</option>
+                                <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark</option>
+                                <option value="sunset" {% if user.theme == 'sunset' %}selected{% endif %}>Sunset</option>
+                                <option value="ocean" {% if user.theme == 'ocean' %}selected{% endif %}>Ocean</option>
+                                <option value="forest" {% if user.theme == 'forest' %}selected{% endif %}>Forest</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td class="actions">
+                        {% if not user.is_admin %}
+                        <form action="{{ url_for('make_admin', user_id=user.id) }}" method="POST" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-make-admin">Make Admin</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('remove_admin', user_id=user.id) }}" method="POST" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-remove-admin" {% if user.id == current_user.id %}disabled{% endif %}>
+                                Remove Admin
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-delete" 
+                                    {% if user.id == current_user.id %}disabled{% endif %}
+                                    onclick="return confirm('Are you sure you want to delete this user?')">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="theme-management">
+        <h2>Theme Management</h2>
+        <div class="theme-options">
+            <form action="{{ url_for('set_universal_theme') }}" method="POST" class="theme-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label for="theme">Universal Theme</label>
+                    <select name="theme" id="theme" class="form-control">
+                        <option value="">No Universal Theme</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="forest">Forest</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">Set Universal Theme</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="admin-nav">
+    <a href="{{ url_for('manage_articles') }}" class="nav-item">
+        📰 Manage Articles
+    </a>
+    <a href="{{ url_for('manage_sources') }}" class="nav-item">
+        🌐 Manage Sources
+    </a>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: var(--mdc-theme-surface);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--mdc-theme-primary);
+}
+
+.users-table {
+    background: var(--mdc-theme-surface);
+    padding: 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-make-admin {
+    background: var(--mdc-theme-primary);
+    color: white;
+}
+
+.btn-remove-admin {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-delete {
+    background: #f44336;
+    color: white;
+}
+
+.admin-nav {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--mdc-theme-surface);
+    border-radius: 8px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--mdc-theme-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: white;
+}
+
+.nav-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: var(--mdc-theme-on-surface);
+}
+
+.nav-button.logout {
+    background: #f44336;
+    color: white;
+}
+
+.nav-button.logout:hover {
+    color: white;
+}
+
+.theme-management {
+    background: var(--mdc-theme-surface);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 24px;
+}
+
+.theme-options {
+    margin-top: 16px;
+}
+
+.theme-form {
+    max-width: 400px;
+}
+
+.theme-form .form-group {
+    margin-bottom: 16px;
+}
+
+.theme-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.theme-form select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-submit {
+    background: var(--mdc-theme-primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-select-form {
+    margin: 0;
+}
+
+.theme-select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.theme-select:hover {
+    border-color: var(--mdc-theme-primary);
+}
+</style>
+{% endblock %} 

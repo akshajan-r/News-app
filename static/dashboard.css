@@ -1,0 +1,662 @@
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px;
+    background: var(--mdc-theme-background);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: var(--mdc-theme-surface);
+    border-radius: 15px;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: var(--mdc-theme-surface);
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.1);
+    position: relative;
+    overflow: visible !important;
+    transition: all 0.3s ease;
+    width: 100%;
+    height: fit-content;
+    min-width: 250px;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+    opacity: 0.7;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-value {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--mdc-theme-primary);
+    margin-bottom: 10px;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(45deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.chart-card {
+    background: var(--mdc-theme-surface);
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    height: 400px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-card h3 {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: var(--mdc-theme-on-surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chart-card h3::before {
+    content: '⚡';
+    font-size: 1.2em;
+}
+
+.activity-card {
+    background: var(--mdc-theme-surface);
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.activity-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.7;
+}
+
+.activity-table td {
+    padding: 15px;
+    background: rgba(var(--mdc-theme-surface-rgb), 0.5);
+    border-top: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.05);
+}
+
+.activity-table tr:hover td {
+    background: rgba(var(--mdc-theme-primary-rgb), 0.05);
+}
+
+/* Futuristic accents */
+.dashboard-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, 
+        rgba(var(--mdc-theme-primary-rgb), 0.1) 0%,
+        transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Holographic effect on hover */
+.stat-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 0%,
+        rgba(var(--mdc-theme-primary-rgb), 0.1) 50%,
+        transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::after {
+    opacity: 1;
+}
+
+.insight-card {
+    position: relative;
+    overflow: visible !important;
+    background: var(--mdc-theme-surface);
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.1);
+    transition: all 0.3s ease;
+    width: 100%;
+    min-width: 400px;
+}
+
+.insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.insight-card h3 {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: var(--mdc-theme-on-surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Time Pattern Card */
+.time-display {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.time-value {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--mdc-theme-primary);
+    margin-bottom: 5px;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(45deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Weekly Pattern Card */
+.day-display {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.day-value {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin-bottom: 5px;
+    background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Streak Stats Card */
+.streak-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.metric {
+    text-align: center;
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+    transition: all 0.3s ease;
+}
+
+.metric:hover {
+    transform: translateY(-3px);
+    background: rgba(var(--mdc-theme-primary-rgb), 0.15);
+}
+
+.metric-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--mdc-theme-primary);
+    margin-bottom: 5px;
+}
+
+.metric-label {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.time-info, .day-info {
+    text-align: center;
+    opacity: 0.7;
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+.dashboard-controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.control-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn.active {
+    background: #ff3b30;
+}
+
+.module-toggles {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: var(--mdc-theme-surface);
+    transition: all 0.2s ease;
+}
+
+.toggle-label:hover {
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.sortable-ghost {
+    opacity: 0.3;
+    transform: scale(0.95);
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1) !important;
+    border: 2px dashed var(--mdc-theme-primary) !important;
+}
+
+.sortable-drag {
+    opacity: 0.9;
+    transform: scale(1.02);
+    cursor: grabbing;
+    z-index: 1000;
+}
+
+.sortable-chosen {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Add grid placeholder for drop zones */
+.stats-grid::after, .insights-grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px dashed rgba(var(--mdc-theme-primary-rgb), 0.1);
+    border-radius: 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.edit-mode .stats-grid::after, .edit-mode .insights-grid::after {
+    opacity: 1;
+}
+
+/* Update drag handle styles */
+.drag-handle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: var(--mdc-theme-on-surface);
+    font-size: 20px;
+    padding: 10px;
+    z-index: 10;
+}
+
+.stat-card .drag-handle {
+    top: 10px;
+    transform: none;
+}
+
+.edit-mode .drag-handle {
+    opacity: 0.5;
+}
+
+.edit-mode .drag-handle:hover {
+    opacity: 1;
+}
+
+.remove-button {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #ff3b30;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 100;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid var(--mdc-theme-surface);
+    transform: scale(0);
+    transition: transform 0.2s ease;
+}
+
+.edit-mode .remove-button {
+    display: flex;
+    transform: scale(1);
+    animation: none;
+}
+
+@keyframes jiggle {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-1deg); }
+    75% { transform: rotate(1deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* Add styles for the module restore menu */
+.restore-menu {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--mdc-theme-surface);
+    padding: 15px 25px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: none;
+    gap: 15px;
+    z-index: 1000;
+}
+
+.restore-menu.visible {
+    display: flex;
+}
+
+.restore-item {
+    padding: 8px 20px;
+    border-radius: 15px;
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.restore-item:hover {
+    background: rgba(var(--mdc-theme-primary-rgb), 0.2);
+}
+
+/* Add size classes */
+.module-small {
+    grid-column: span 1;
+}
+
+.module-large {
+    grid-column: span 2;
+    min-height: 200px;
+}
+
+/* Make sure cards maintain their dimensions when dragged */
+.sortable-drag.insight-card {
+    min-width: 400px;
+    grid-column: span 2;
+}
+
+.sortable-drag.stat-card {
+    min-width: 250px;
+    grid-column: span 1;
+}
+
+/* Update resize handle styles */
+.resize-handle {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background: var(--mdc-theme-surface-2);
+    cursor: se-resize;
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--mdc-theme-primary);
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    touch-action: none;
+    user-select: none;
+    will-change: transform, opacity;
+}
+
+.edit-mode .resize-handle {
+    opacity: 1;
+}
+
+.edit-mode .resize-handle:hover {
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+    transform: scale(1.1);
+}
+
+/* Add resize feedback */
+.resizing {
+    touch-action: none;
+    user-select: none !important;
+    cursor: se-resize !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+/* Add transition for smooth size changes */
+.stat-card, .insight-card {
+    width: 100%;
+    min-width: 250px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+/* Smooth resize handling */
+.resizing {
+    transition: none !important;
+    z-index: 100;
+    will-change: width, height, transform;
+}
+
+.resizing-end {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.resizing * {
+    pointer-events: none;
+}
+
+/* Size classes with smooth transitions */
+.size-small {
+    width: 100% !important;
+    height: 100px !important;
+    grid-column: span 1 !important;
+}
+
+.size-tall {
+    width: 100% !important;
+    height: 220px !important;
+    grid-column: span 1 !important;
+}
+
+.size-wide {
+    width: 100% !important;
+    height: 100px !important;
+    grid-column: span 2 !important;
+}
+
+.size-large {
+    width: 100% !important;
+    height: 220px !important;
+    grid-column: span 2 !important;
+}
+
+/* Add square size preset */
+.size-square {
+    width: 220px !important;
+    height: 220px !important;
+    grid-column: span 1 !important;
+}
+
+/* Add styles for the reset button */
+.reset-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.2);
+}
+
+.reset-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Add this to prevent text selection during resize */
+.edit-mode .stat-card,
+.edit-mode .insight-card {
+    user-select: none;
+}
+
+/* Add styles for the nav buttons */
+.nav-button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(var(--mdc-theme-primary-rgb), 0.2);
+    text-decoration: none;
+    font-size: 0.95em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-button:hover {
+    transform: translateY(-2px);
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: var(--mdc-theme-on-surface);
+}
+
+/* Special styling for logout button */
+.nav-button.logout {
+    background: rgba(var(--mdc-theme-error-rgb), 0.1);
+    border-color: rgba(var(--mdc-theme-error-rgb), 0.2);
+}
+
+.nav-button.logout:hover {
+    background: rgba(var(--mdc-theme-error-rgb), 0.15);
+}
+
+/* Update gap between nav items */
+.navbar-nav {
+    gap: 12px;
+}
+
+/* Add styles for the recommendations header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    font-size: 1.4em;
+    color: var(--mdc-theme-primary);
+}
+
+.header-left h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Remove the refresh button styles */
+.refresh-button {
+    display: none;
+}

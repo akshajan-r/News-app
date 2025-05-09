@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ session.get('theme', 'light') }}">
+<head>
+    <script>
+        // Apply theme immediately before page renders
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {% if current_user.is_authenticated and stats is defined %}
+    <meta name="user-streak" content="{{ stats.streak }}">
+    <meta name="unlocked-themes" content="{{ current_user.unlocked_themes }}">
+    {% endif %}
+    {% if current_user.is_authenticated %}
+        {% if current_user.theme %}
+        <meta name="user-theme" content="{{ current_user.theme }}">
+        {% endif %}
+        {% if universal_theme %}
+        <meta name="universal-theme" content="{{ universal_theme }}">
+        {% endif %}
+    {% endif %}
+    <title>{% block title %}News Aggregator{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Custom CSS - Load after Bootstrap to override -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='light_theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dark_theme.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    {% block head %}{% endblock %}
+    <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+
+    <style>
+        /* Base styles to modernize the look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--mdc-theme-background);
+            color: var(--mdc-theme-on-surface);
+        }
+
+        .navbar {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: none !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.4em;
+            background: linear-gradient(45deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Optional: Add a subtle glow effect on hover */
+        .navbar-brand:hover::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+            opacity: 0.1;
+            border-radius: 8px;
+            z-index: -1;
+        }
+
+        #theme-toggle {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: var(--mdc-theme-surface-2);
+            color: var(--mdc-theme-on-surface);
+        }
+
+        #theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .nav-link {
+            font-weight: 500;
+            padding: 8px 16px !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin: 0 4px;
+        }
+
+        .nav-link:hover {
+            background: var(--mdc-theme-surface-2);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1200px;
+            padding: 0 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(var(--mdc-theme-on-surface-rgb), 0.1);
+            background: var(--mdc-theme-surface);
+            color: var(--mdc-theme-on-surface);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 2px var(--mdc-theme-primary);
+            border-color: transparent;
+        }
+
+        .footer {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 0;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 16px;
+            min-width: 100px;
+            background: var(--mdc-theme-surface-2);
+            color: var(--mdc-theme-on-surface);
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            color: var(--mdc-theme-on-surface);
+            text-decoration: none;
+        }
+
+        .nav-button.admin {
+            background: var(--mdc-theme-primary);
+            color: white;
+        }
+
+        .nav-button.admin:hover {
+            color: white;
+        }
+
+        .nav-button.logout {
+            background: #f44336;
+            color: white;
+        }
+
+        .nav-button.logout:hover {
+            color: white;
+        }
+
+        .nav-button.guest {
+            background: var(--mdc-theme-secondary);
+            color: white;
+            opacity: 0.9;
+        }
+
+        .nav-button.guest:hover {
+            opacity: 1;
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="{% if theme == 'dark' %}custom-theme{% endif %}">
+    {% block navbar %}
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('home') }}">Newsense</a>
+            <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+                {% if current_user.is_authenticated %}
+                    <a class="nav-button" href="{{ url_for('dashboard') }}">📊 Dashboard</a>
+                    {% if current_user.is_admin %}
+                        <a class="nav-button admin" href="{{ url_for('admin_dashboard') }}">
+                            👑 Admin
+                        </a>
+                    {% endif %}
+                    <a class="nav-button logout" href="{{ url_for('logout') }}">→ Logout</a>
+                {% else %}
+                    <a class="nav-button" href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-button" href="{{ url_for('signup') }}">Sign Up</a>
+                    {% if request.endpoint != 'guest_news' %}
+                    <a class="nav-button guest" href="{{ url_for('guest_news') }}">
+                        👋 Browse as Guest
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
+
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block footer %}
+    <footer class="footer mt-auto">
+        <div class="container text-center">
+            <span class="text-muted">© 2024 News App</span>
+        </div>
+    </footer>
+    {% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

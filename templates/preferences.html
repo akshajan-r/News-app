@@ -1,0 +1,17 @@
+<div class="preference-section">
+    <h3>Reading Preferences</h3>
+    <div class="preference-option">
+        <label>
+            <input type="radio" name="reading_mode" value="original" 
+                   {% if current_user.preferred_reading_mode == 'original' %}checked{% endif %}>
+            Open articles in original website
+        </label>
+    </div>
+    <div class="preference-option">
+        <label>
+            <input type="radio" name="reading_mode" value="reader" 
+                   {% if current_user.preferred_reading_mode == 'reader' %}checked{% endif %}>
+            Use reader mode (minimal, ad-free view)
+        </label>
+    </div>
+</div> 

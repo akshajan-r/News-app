@@ -1,0 +1,81 @@
+/* index.css */
+:root {
+  --theme-color: #555358;
+  --text-color: #333333;
+}
+/* Ensure the body and basic elements have some styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+  
+  header, footer {
+    background-color: #e0e8f0;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+  }
+  
+  main {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .material-button {
+    background-color: #b1b0b2;
+    color: #7b7a7d;
+    border: none;
+    border-radius: 8px; /* Increased border radius for rounded buttons */
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .material-button:hover {
+    background-color: #d9d9d9;
+  }
+
+
+  .theme-selector {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.theme-selector h3 {
+    margin-top: 0;
+}
+
+.theme-selector input[type="color"] {
+    width: 50px;
+    height: 30px;
+    margin-right: 10px;
+}
+  
+  /* Add additional styling as needed */
+  label, input, select {
+    margin: 10px 0;
+    display: block;
+  }
+  
+  .footer-text {
+    font-size: 14px;
+  }
+  
+  /* Ensure form elements are styled */
+  input[type="text"], input[type="password"], select {
+    padding: 10px;
+    width: calc(100% - 22px);
+    max-width: 400px;
+    margin: 10px auto;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  

@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='news.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="news-container">
+    <!-- Add back button and search options -->
+    <div class="news-header">
+        <a href="{{ url_for('home') }}" class="material-button back-button">
+            <span>←</span> Back to News
+        </a>
+        <form method="POST" action="{{ url_for('get_news') }}" class="news-filters">
+            {{ form.hidden_tag() }}
+            <div class="filter-group">
+                <div class="filter-item">
+                    {{ form.category(class="form-control") }}
+                </div>
+                
+                <div class="filter-item">
+                    {{ form.keywords(class="form-control", placeholder="Search keywords...") }}
+                </div>
+                
+                <div class="filter-item">
+                    {{ form.country(class="form-control") }}
+                </div>
+                
+                <div class="filter-item">
+                    <button type="submit" class="material-button">Update Results</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="articles-grid">
+        {% for article in articles %}
+            <div class="article-card">
+                <a href="{{ url_for('read_article') }}?url={{ article.url | urlencode }}&title={{ article.title | urlencode }}&preview_image={{ article.urlToImage | urlencode if article.urlToImage }}" 
+                   class="article-link">
+                    <div class="article-image">
+                        <img src="{{ article.urlToImage }}" 
+                             alt="{{ article.title }}" 
+                             onerror="this.onerror=null; this.src='/static/placeholder.jpg'"
+                             loading="lazy">
+                    </div>
+                    <div class="article-content">
+                        {% if article.category %}
+                            <div class="category-tag {{ article.category }}">
+                                {{ article.category | title }}
+                            </div>
+                        {% endif %}
+                        <h3 class="article-title">{{ article.title }}</h3>
+                        {% if article.description %}
+                            <p class="article-description">{{ article.description }}</p>
+                        {% endif %}
+                        <div class="article-meta">
+                            <span class="source">{{ article.source.name if article.source }}</span>
+                            <span class="read-more">Read More →</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.news-header {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    color: var(--mdc-theme-primary);
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease;
+}
+
+.back-button:hover {
+    transform: translateX(-5px);
+}
+
+.back-button span {
+    margin-right: 8px;
+}
+
+.news-filters {
+    margin-top: 15px;
+}
+
+.filter-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: -4px;
+}
+
+.filter-item {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    height: 40px;
+}
+
+.filter-item:last-child {
+    flex: 0 0 auto;
+    min-width: auto;
+    margin-top: 0;
+}
+
+.filter-item .material-button {
+    width: 100%;
+    height: 40px;
+    margin: 0;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    top: -1px;
+}
+
+.form-control {
+    height: 40px;
+    width: 100%;
+    margin: 0;
+    padding: 8px 12px;
+}
+
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 20px 0;
+}
+
+.news-article {
+    display: flex;
+    flex-direction: column;
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.news-article:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.article-image-container {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    overflow: hidden;
+}
+
+.article-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    background: var(--mdc-theme-surface-2);
+}
+
+.article-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    display: block;
+}
+
+.article-image img:not([src]), 
+.article-image img[src=""] {
+    display: none;
+}
+
+.news-article:hover .article-image {
+    transform: scale(1.05);
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+}
+
+.article-content {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.article-title {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.article-title a {
+    color: var(--mdc-theme-on-surface);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.article-title a:hover {
+    color: var(--mdc-theme-primary);
+}
+
+.article-description {
+    font-size: 0.9em;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.8;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 4.5em;  /* 3 lines x 1.5 line height */
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    opacity: 0.7;
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.no-results-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.sub-text {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+@media (max-width: 768px) {
+    .filter-group {
+        flex-direction: column;
+    }
+    
+    .filter-item {
+        width: 100%;
+    }
+    
+    .filter-item:last-child {
+        width: 100%;
+    }
+    
+    .news-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.category-label {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-bottom: 10px;
+    text-transform: capitalize;
+}
+
+.category-label.business {
+    background-color: #FF9800;
+    color: #000;
+}
+
+.category-label.entertainment {
+    background-color: #E91E63;
+    color: #fff;
+}
+
+.category-label.health {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.category-label.science {
+    background-color: #2196F3;
+    color: #fff;
+}
+
+.category-label.sports {
+    background-color: #9C27B0;
+    color: #fff;
+}
+
+.category-label.technology {
+    background-color: #607D8B;
+    color: #fff;
+}
+
+[data-theme="dark"] .category-label {
+    opacity: 0.9;
+}
+
+.news-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.article-card {
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+}
+
+.article-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.article-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    background: var(--mdc-theme-surface-2);
+}
+
+.article-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    display: block;
+}
+
+.article-image img:not([src]), 
+.article-image img[src=""] {
+    display: none;
+}
+
+.article-card:hover .article-image img {
+    transform: scale(1.05);
+}
+
+.article-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    background: var(--mdc-theme-surface);
+    position: relative;
+    z-index: 1;
+}
+
+.article-title {
+    font-size: 1.2em;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    color: var(--mdc-theme-on-surface);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2.8em;  /* 2 lines x 1.4 line height */
+}
+
+.article-title a {
+    color: var(--mdc-theme-on-surface);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.article-title a:hover {
+    color: var(--mdc-theme-primary);
+}
+
+.article-description {
+    font-size: 0.9em;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.8;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-wrap: break-word;
+    height: 4.5em;  /* 3 lines x 1.5 line height */
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    opacity: 0.7;
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.no-results-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.sub-text {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+@media (max-width: 768px) {
+    .filter-group {
+        flex-direction: column;
+    }
+    
+    .filter-item {
+        width: 100%;
+    }
+    
+    .filter-item:last-child {
+        width: 100%;
+    }
+    
+    .news-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.category-tag {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin-bottom: 12px;
+    background: var(--mdc-theme-primary);
+    color: white;
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.source {
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.read-more {
+    color: var(--mdc-theme-primary);
+    font-weight: 500;
+}
+
+.article-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Preserve form values
+    const urlParams = new URLSearchParams(window.location.search);
+    const formInputs = document.querySelectorAll('.news-filters select, .news-filters input');
+    formInputs.forEach(input => {
+        const value = urlParams.get(input.name);
+        if (value) input.value = value;
+    });
+
+    // Create article card
+    function createArticleCard(article) {
+        const card = document.createElement('div');
+        card.className = 'article-card';
+        
+        // Update click handler to use new reader view
+        card.onclick = () => window.location.href = `/read_article?url=${encodeURIComponent(article.url)}&title=${encodeURIComponent(article.title)}&preview_image=${encodeURIComponent(article.urlToImage || '')}`;
+        
+        card.innerHTML = `
+            <img src="${article.urlToImage || '/static/placeholder.jpg'}" 
+                 alt="${article.title}"
+                 class="article-image"
+                 onerror="this.src='/static/placeholder.jpg'">
+            <div class="article-content">
+                <h3 class="article-title">${article.title}</h3>
+                <p class="article-description">${article.description || ''}</p>
+                <div class="article-meta">
+                    <span>${article.source?.name || 'Unknown Source'}</span>
+                    <span>${getTimeAgo(article.publishedAt)}</span>
+                </div>
+            </div>
+        `;
+        
+        return card;
+    }
+});
+</script>
+{% endblock %}

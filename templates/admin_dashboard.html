@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p class="subtitle">Manage your news platform</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Stats Overview Card -->
+        <div class="admin-card stats-overview">
+            <h2>Platform Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-icon">👥</span>
+                    <div class="stat-info">
+                        <h3>Total Users</h3>
+                        <span class="stat-value">{{ user_count }}</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">📚</span>
+                    <div class="stat-info">
+                        <h3>Articles Read</h3>
+                        <span class="stat-value">{{ total_reads }}</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🔖</span>
+                    <div class="stat-info">
+                        <h3>Bookmarks</h3>
+                        <span class="stat-value">{{ total_bookmarks }}</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">📰</span>
+                    <div class="stat-info">
+                        <h3>Active Sources</h3>
+                        <span class="stat-value">{{ source_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme Management Card -->
+        <div class="admin-card theme-management">
+            <h2>Theme Management</h2>
+            <div class="theme-controls">
+                <form action="{{ url_for('set_universal_theme') }}" method="POST" class="theme-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="theme-grid">
+                        <div class="theme-option" data-theme="">
+                            <input type="radio" name="theme" value="" id="theme-none">
+                            <label for="theme-none">
+                                <div class="theme-preview default">
+                                    <span class="theme-icon">🌐</span>
+                                </div>
+                                <span class="theme-name">Default</span>
+                            </label>
+                        </div>
+                        <div class="theme-option" data-theme="light">
+                            <input type="radio" name="theme" value="light" id="theme-light">
+                            <label for="theme-light">
+                                <div class="theme-preview light">
+                                    <span class="theme-icon">☀️</span>
+                                </div>
+                                <span class="theme-name">Light</span>
+                            </label>
+                        </div>
+                        <div class="theme-option" data-theme="dark">
+                            <input type="radio" name="theme" value="dark" id="theme-dark">
+                            <label for="theme-dark">
+                                <div class="theme-preview dark">
+                                    <span class="theme-icon">🌙</span>
+                                </div>
+                                <span class="theme-name">Dark</span>
+                            </label>
+                        </div>
+                        <div class="theme-option" data-theme="sunset">
+                            <input type="radio" name="theme" value="sunset" id="theme-sunset">
+                            <label for="theme-sunset">
+                                <div class="theme-preview sunset">
+                                    <span class="theme-icon">🌅</span>
+                                </div>
+                                <span class="theme-name">Sunset</span>
+                            </label>
+                        </div>
+                        <div class="theme-option" data-theme="ocean">
+                            <input type="radio" name="theme" value="ocean" id="theme-ocean">
+                            <label for="theme-ocean">
+                                <div class="theme-preview ocean">
+                                    <span class="theme-icon">🌊</span>
+                                </div>
+                                <span class="theme-name">Ocean</span>
+                            </label>
+                        </div>
+                        <div class="theme-option" data-theme="forest">
+                            <input type="radio" name="theme" value="forest" id="theme-forest">
+                            <label for="theme-forest">
+                                <div class="theme-preview forest">
+                                    <span class="theme-icon">🌲</span>
+                                </div>
+                                <span class="theme-name">Forest</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary theme-submit">
+                        <span class="btn-icon">🎨</span> Update Universal Theme
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- User Management Card -->
+        <div class="admin-card user-management">
+            <h2>User Management</h2>
+            <div class="user-list">
+                {% for user in users %}
+                <div class="user-item">
+                    <div class="user-info">
+                        <span class="user-avatar">{{ user.username[0].upper() }}</span>
+                        <div class="user-details">
+                            <h4>{{ user.username }}</h4>
+                            <p>Joined: {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <form action="{{ url_for('set_user_theme', user_id=user.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="theme" class="form-control">
+                                <option value="">Default Theme</option>
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="sunset">Sunset</option>
+                                <option value="ocean">Ocean</option>
+                                <option value="forest">Forest</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary">Update</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.admin-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.admin-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.7;
+    font-size: 1.1rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.admin-card {
+    background: var(--mdc-theme-surface);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--mdc-theme-on-surface);
+}
+
+/* Stats Overview Styling */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    background: var(--mdc-theme-surface-2);
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    background: var(--mdc-theme-primary);
+    padding: 0.5rem;
+    border-radius: 8px;
+    opacity: 0.9;
+}
+
+.stat-info h3 {
+    font-size: 0.9rem;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.7;
+    margin-bottom: 0.3rem;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--mdc-theme-primary);
+}
+
+/* Theme Management Styling */
+.theme-controls {
+    background: var(--mdc-theme-surface-2);
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.theme-option {
+    text-align: center;
+}
+
+.theme-option input[type="radio"] {
+    display: none;
+}
+
+.theme-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.theme-preview.default {
+    background: linear-gradient(45deg, #f3f4f6, #ffffff);
+}
+
+.theme-preview.light {
+    background: linear-gradient(45deg, #ffffff, #f3f4f6);
+}
+
+.theme-preview.dark {
+    background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+}
+
+.theme-preview.sunset {
+    background: linear-gradient(45deg, #ff7e5f, #feb47b);
+}
+
+.theme-preview.ocean {
+    background: linear-gradient(45deg, #2193b0, #6dd5ed);
+}
+
+.theme-preview.forest {
+    background: linear-gradient(45deg, #2af598, #009efd);
+}
+
+.theme-icon {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.theme-name {
+    font-size: 0.9rem;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.8;
+}
+
+.theme-option input[type="radio"]:checked + label .theme-preview {
+    border-color: var(--mdc-theme-primary);
+    box-shadow: 0 0 0 2px var(--mdc-theme-primary);
+}
+
+.theme-option input[type="radio"]:checked + label .theme-icon {
+    transform: scale(1.2);
+}
+
+.theme-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-submit {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+}
+
+/* User Management Styling */
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-item {
+    background: var(--mdc-theme-surface-2);
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--mdc-theme-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.user-details h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.user-details p {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.user-actions form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.form-control {
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--mdc-theme-primary);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--mdc-theme-secondary);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 1rem;
+    }
+
+    .user-item {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .user-actions form {
+        width: 100%;
+    }
+
+    .user-actions .form-control,
+    .user-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %} 

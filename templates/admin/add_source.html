@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container">
+    <h1>Add News Source</h1>
+    
+    <div class="form-container">
+        <form method="POST" class="source-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="form-group">
+                <label for="name">Source Name</label>
+                <input type="text" id="name" name="name" required class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="url">Source URL</label>
+                <input type="url" id="url" name="url" required class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="api_key">API Key (optional)</label>
+                <input type="text" id="api_key" name="api_key" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" name="category" class="form-control">
+                    <option value="">Select Category</option>
+                    <option value="business">Business</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="health">Health</option>
+                    <option value="science">Science</option>
+                    <option value="sports">Sports</option>
+                    <option value="technology">Technology</option>
+                </select>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('manage_sources') }}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-submit">Add Source</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-container {
+    background: var(--mdc-theme-surface);
+    padding: 24px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btn-cancel, .btn-submit {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+}
+
+.btn-submit {
+    background: var(--mdc-theme-primary);
+    color: white;
+}
+</style>
+{% endblock %} 

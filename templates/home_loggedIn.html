@@ -1,0 +1,1017 @@
+{% extends "base.html" %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-header">
+            <h1>Welcome back, <span class="highlight">{{ user.username }}</span>! 👋</h1>
+            <p>Your personalised news dashboard awaits.</p>
+        </div>
+        <div class="nav-buttons">
+            <a href="{{ url_for('bookmarks') }}" class="nav-button">
+                <span class="icon">🔖</span>
+                My Bookmarks
+            </a>
+            <a href="{{ url_for('reading_history') }}" class="nav-button">
+                <span class="icon">📚</span>
+                Reading History
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Section with Search and Stats -->
+    <div class="top-section">
+        <!-- News Preferences -->
+        <div class="card preferences-card">
+            <h2>News Preferences</h2>
+            
+            <form action="{{ url_for('get_news') }}" method="POST" class="preferences-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category" class="form-control">
+                        <option value="">All Categories</option>
+                        <option value="business">Business</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Health</option>
+                        <option value="science">Science</option>
+                        <option value="sports">Sports</option>
+                        <option value="technology">Technology</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Keywords</label>
+                    <input type="text" name="keywords" placeholder="Enter keywords..." class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Get News</button>
+            </form>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card stats-card">
+            <h3>Your Reading Stats</h3>
+            <div class="stats-list">
+                <div class="stat-item">
+                    <span class="stat-label">Articles Read Today</span>
+                    <span class="stat-value">{{ stats.articles_today }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Favorite Category</span>
+                    <span class="stat-value">{{ stats.favorite_category | title }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Reading Streak</span>
+                    <span class="stat-value">{{ stats.streak }} days</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Section (Full Width) -->
+    <div class="recommendations-section">
+        <div class="section-header">
+            <div class="header-left">
+                <span class="header-icon">⭐</span>
+                <h2>Personalised For You</h2>
+            </div>
+        </div>
+        
+        <div class="carousel-container">
+            <div id="recommended-articles-container" class="carousel-track">
+                <!-- Articles will be loaded here -->
+            </div>
+            <button class="carousel-button prev">❮</button>
+            <button class="carousel-button next">❯</button>
+        </div>
+    </div>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <h3 class="drawer-title">Reading Stats</h3>
+        <button class="drawer-close" onclick="closeDrawer()">×</button>
+    </div>
+    <div class="drawer-content">
+        <div class="drawer-stats">
+            <div class="stat-group">
+                <h4>Today's Reading</h4>
+                <div class="stat-value">{{ stats.articles_today }} articles</div>
+            </div>
+            <div class="stat-group">
+                <h4>Reading Streak</h4>
+                <div class="stat-value">{{ stats.streak }} days</div>
+            </div>
+            <div class="stat-group">
+                <h4>Favorite Topics</h4>
+                <div class="topic-tags">
+                    <!-- Topics will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Core layout */
+.dashboard-container {
+    max-width: min(95%, 1400px); /* Responsive max-width */
+    margin: 0 auto;
+    padding: clamp(16px, 2vw, 24px); /* Responsive padding */
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 2vw, 24px); /* Responsive gap */
+}
+
+.top-section {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); /* Prevent overflow */
+    gap: clamp(16px, 2vw, 24px);
+    width: 100%;
+}
+
+.recommendations-section {
+    width: 100%;
+}
+
+/* Welcome section */
+.welcome-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.welcome-section h1 {
+    font-size: clamp(20px, 2.5vw, 28px);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.highlight {
+    color: var(--mdc-theme-primary);
+}
+
+/* Sidebar */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.card {
+    background: var(--mdc-theme-surface);
+    border-radius: clamp(8px, 1vw, 12px); /* Responsive border radius */
+    padding: clamp(16px, 2vw, 20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+}
+
+/* Preferences Card */
+.preferences-card h2 {
+    font-size: clamp(16px, 1.8vw, 18px);
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.7;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: var(--mdc-theme-surface-2);
+    color: var(--mdc-theme-on-surface);
+}
+
+/* Stats Card */
+.stats-card h3 {
+    font-size: clamp(16px, 1.8vw, 18px);
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--mdc-theme-surface-2);
+    border-radius: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.stat-value {
+    font-weight: 500;
+    color: var(--mdc-theme-primary);
+}
+
+/* Recommendations Section */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    font-size: 24px;
+}
+
+.header-left h2 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+/* Article Cards and Carousel */
+.carousel-container {
+    background: var(--mdc-theme-surface-2);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.carousel-track {
+    display: flex;
+    gap: clamp(12px, 1.5vw, 20px);
+    transition: transform 0.3s ease;
+    margin: 0 auto; /* Center the track */
+}
+
+.article-card {
+    flex: 0 0 clamp(280px, 30vw, 400px); /* Responsive card width */
+    min-width: 0; /* Prevent overflow */
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.article-card:hover {
+    transform: translateY(-4px);
+}
+
+.article-image {
+    width: 100%;
+    height: clamp(160px, 20vw, 220px); /* Responsive image height */
+    object-fit: cover;
+}
+
+.article-content {
+    padding: 16px;
+}
+
+.article-title {
+    font-size: clamp(14px, 1.6vw, 16px);
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--mdc-theme-on-surface);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+.article-description {
+    font-size: clamp(12px, 1.4vw, 14px);
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.7;
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3;
+    overflow: hidden;
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--mdc-theme-on-surface);
+    opacity: 0.6;
+}
+
+.carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.carousel-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.carousel-button.prev {
+    left: 20px;
+}
+
+.carousel-button.next {
+    right: 20px;
+}
+
+/* Add responsive breakpoints */
+@media (max-width: 768px) {
+    .top-section {
+        grid-template-columns: 1fr; /* Stack on mobile */
+    }
+
+    .carousel-container {
+        padding: clamp(12px, 1.5vw, 16px);
+    }
+
+    .carousel-button {
+        width: clamp(32px, 4vw, 40px);
+        height: clamp(32px, 4vw, 40px);
+    }
+}
+
+/* Loading state */
+.loading, .no-articles, .error {
+    text-align: center;
+    padding: clamp(20px, 3vw, 40px);
+    font-size: clamp(14px, 1.6vw, 16px);
+}
+
+.relevance-score {
+    background: var(--mdc-theme-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    max-width: 100px; /* Prevent super long numbers */
+    overflow: hidden;
+}
+
+.article-card {
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.article-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.article-topics {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 8px 0;
+}
+
+.topic-tag {
+    background: var(--mdc-theme-primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.article-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-not-interested {
+    background: transparent;
+    border: 1px solid var(--mdc-theme-error);
+    color: var(--mdc-theme-error);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-not-interested:hover {
+    background: var(--mdc-theme-error);
+    color: white;
+}
+
+.sentiment-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin: 8px 0;
+}
+
+.sentiment-indicator.very-positive { background: rgba(0, 255, 0, 0.1); }
+.sentiment-indicator.positive { background: rgba(0, 200, 0, 0.1); }
+.sentiment-indicator.neutral { background: rgba(128, 128, 128, 0.1); }
+.sentiment-indicator.negative { background: rgba(255, 100, 0, 0.1); }
+.sentiment-indicator.very-negative { background: rgba(255, 0, 0, 0.1); }
+
+.sentiment-icon {
+    font-size: 16px;
+}
+
+.sentiment-match {
+    margin-left: auto;
+    opacity: 0.7;
+}
+
+/* Add these new styles */
+.reading-stats-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.topic-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.topic-bubble {
+    background: var(--mdc-theme-primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-meta {
+    opacity: 0.7;
+    font-size: 12px;
+}
+
+.article-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-bookmark, .btn-share {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.btn-bookmark:hover, .btn-share:hover {
+    opacity: 1;
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--mdc-theme-primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    animation: slideIn 0.3s, fadeOut 0.3s 2.7s;
+    z-index: 1000;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.toast {
+    background: var(--mdc-theme-primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    margin-top: 8px;
+    animation: slideIn 0.3s, fadeOut 0.3s 2.7s forwards;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.btn-bookmark, .btn-share {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-bookmark:hover, .btn-share:hover {
+    background: rgba(var(--mdc-theme-primary-rgb), 0.1);
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; }
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--mdc-theme-surface-2);
+    border-radius: 8px;
+    color: var(--mdc-theme-on-surface);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-button:hover {
+    background: var(--mdc-theme-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.nav-button .icon {
+    font-size: 18px;
+}
+
+@media (max-width: 768px) {
+    .welcome-section {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+}
+
+/* Add these new styles */
+.recent-reads-section {
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recent-reads-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.recent-reads-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.view-all {
+    color: var(--mdc-theme-primary);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+.recent-reads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* Drawer styles */
+.drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 998;
+}
+
+.drawer {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    background: var(--mdc-theme-surface);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.drawer.open {
+    transform: translateY(-100%);
+}
+
+.drawer-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.drawer-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.drawer-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.drawer-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--mdc-theme-on-surface);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.drawer-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.drawer-content {
+    padding: 20px;
+}
+
+.drawer-stats {
+    display: grid;
+    gap: 20px;
+}
+
+.stat-group {
+    background: var(--mdc-theme-surface-2);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-group h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--mdc-theme-primary);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadRecommendedArticles();
+});
+
+function loadRecommendedArticles() {
+    const container = document.getElementById('recommended-articles-container');
+    container.innerHTML = '<div class="loading">Loading recommendations...</div>';
+
+    fetch('/get_recommended_articles')
+        .then(response => response.json())
+        .then(data => {
+            if (data.articles && data.articles.length > 0) {
+                container.innerHTML = '';
+                data.articles.forEach(article => {
+                    const card = createArticleCard(article);
+                    container.appendChild(card);
+                });
+                initializeCarousel();
+            } else {
+                container.innerHTML = '<div class="no-articles">No recommendations available</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading recommendations:', error);
+            container.innerHTML = '<div class="error">Failed to load recommendations</div>';
+        });
+}
+
+function createArticleCard(article) {
+    const card = document.createElement('div');
+    card.className = 'article-card';
+    
+    card.onclick = () => window.location.href = `/read_article?url=${encodeURIComponent(article.url)}&title=${encodeURIComponent(article.title)}&preview_image=${encodeURIComponent(article.urlToImage || '')}`;
+    
+    const timeAgo = getTimeAgo(article.publishedAt);
+    const readingTime = estimateReadingTime(article.description || '');
+    
+    const score = article.relevance_score ? 
+        `<div class="relevance-score">Match: ${Math.min(Math.round(article.relevance_score), 100)}%</div>` : '';
+    
+    const topics = article.topic ? 
+        `<div class="article-topics">
+            ${article.topic.map(t => `<span class="topic-tag">${t}</span>`).join('')}
+         </div>` : '';
+         
+    const sentiment = article.sentiment ? 
+        `<div class="sentiment-indicator ${article.sentiment.label.toLowerCase().replace(' ', '-')}">
+            <span class="sentiment-icon">${getSentimentIcon(article.sentiment.label)}</span>
+            <span class="sentiment-label">${article.sentiment.label}</span>
+            <span class="sentiment-match">${article.sentiment.match_score}% match</span>
+         </div>` : '';
+    
+    const articleActions = `
+        <div class="article-actions">
+            <button onclick="event.stopPropagation(); bookmarkArticle('${article.url}', '${article.title}')" class="btn-bookmark">
+                🔖
+            </button>
+            <button onclick="event.stopPropagation(); shareArticle('${article.url}')" class="btn-share">
+                📤
+            </button>
+        </div>
+    `;
+
+    // Add a toast container if it doesn't exist
+    if (!document.getElementById('toast-container')) {
+        const toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+
+    card.innerHTML = `
+        <img src="${article.urlToImage || '/static/placeholder.jpg'}" 
+             alt="${article.title}"
+             class="article-image"
+             onerror="this.src='/static/placeholder.jpg'">
+        <div class="article-content">
+            <h3 class="article-title">${article.title}</h3>
+            ${sentiment || ''}
+            <p class="article-description">${article.description || ''}</p>
+            ${topics || ''}
+            <div class="article-meta">
+                <span>${article.source?.name || 'Unknown Source'}</span>
+                <span>${timeAgo} · ${readingTime} min read</span>
+                ${articleActions}
+            </div>
+            ${score || ''}
+        </div>
+    `;
+    
+    return card;
+}
+
+function getTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+}
+
+function initializeCarousel() {
+    const track = document.querySelector('.carousel-track');
+    const cards = track.querySelectorAll('.article-card');
+    let currentIndex = 0;
+    
+    document.querySelector('.carousel-button.prev').addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateCarousel();
+        }
+    });
+    
+    document.querySelector('.carousel-button.next').addEventListener('click', () => {
+        if (currentIndex < cards.length - 3) {
+            currentIndex++;
+            updateCarousel();
+        }
+    });
+    
+    function updateCarousel() {
+        const cardWidth = document.querySelector('.article-card').offsetWidth;
+        const gap = parseInt(getComputedStyle(document.querySelector('.carousel-track')).gap);
+        const offset = currentIndex * -(cardWidth + gap);
+        track.style.transform = `translateX(${offset}px)`;
+    }
+}
+
+// Add window resize handler
+window.addEventListener('resize', () => {
+    if (document.querySelector('.article-card')) {
+        updateCarousel();
+    }
+});
+
+function markNotInterested(event, articleUrl) {
+    event.stopPropagation();  // Prevent article click
+    fetch('/mark_not_interested', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ url: articleUrl })
+    })
+    .then(() => {
+        loadRecommendedArticles();  // Refresh recommendations
+    });
+}
+
+function getSentimentIcon(sentiment) {
+    const icons = {
+        'Very Positive': '😄',
+        'Positive': '🙂',
+        'Neutral': '😐',
+        'Negative': '🙁',
+        'Very Negative': '😢'
+    };
+    return icons[sentiment] || '😐';
+}
+
+function estimateReadingTime(text) {
+    const words = text.split(' ').length;
+    return Math.max(1, Math.round(words / 200));
+}
+
+function bookmarkArticle(url, title) {
+    fetch('/bookmark_article', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ url, title })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast('Article bookmarked! 🔖');
+        }
+    })
+    .catch(error => {
+        console.error('Error bookmarking:', error);
+        showToast('Failed to bookmark article');
+    });
+}
+
+function shareArticle(url) {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Check out this article',
+            url: url
+        })
+        .then(() => showToast('Shared successfully! 🎉'))
+        .catch(error => {
+            console.error('Error sharing:', error);
+            copyToClipboard(url);
+        });
+    } else {
+        copyToClipboard(url);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => showToast('Link copied to clipboard! 📋'))
+        .catch(() => showToast('Failed to copy link'));
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.getElementById('toast-container').appendChild(toast);
+    
+    // Remove toast after animation
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function openDrawer() {
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawerBackdrop').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawerBackdrop').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Close drawer when clicking backdrop
+document.getElementById('drawerBackdrop').addEventListener('click', closeDrawer);
+
+// Add touch gestures for mobile
+let startY = 0;
+let currentY = 0;
+
+document.getElementById('drawer').addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+});
+
+document.getElementById('drawer').addEventListener('touchmove', (e) => {
+    currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+    if (diff > 0) { // Only allow dragging down
+        e.currentTarget.style.transform = `translateY(${diff}px)`;
+    }
+});
+
+document.getElementById('drawer').addEventListener('touchend', (e) => {
+    const diff = currentY - startY;
+    if (diff > 100) { // If dragged down more than 100px, close drawer
+        closeDrawer();
+    } else {
+        e.currentTarget.style.transform = ''; // Reset position
+    }
+});
+</script>
+{% endblock %}

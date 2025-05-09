@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="guest-container">
+    <div class="hero-section">
+        <h1>Welcome to Newsense</h1>
+        <p class="lead">Your gateway to curated news from around the world</p>
+        
+        <div class="search-section">
+            <form action="{{ url_for('guest_news') }}" method="GET" class="search-form">
+                <div class="input-group">
+                    <input type="text" name="keywords" class="form-control" placeholder="Search news...">
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        <option value="business">Business</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Health</option>
+                        <option value="science">Science</option>
+                        <option value="sports">Sports</option>
+                        <option value="technology">Technology</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <h2>Want More Features?</h2>
+        <p>Sign up to unlock personalised recommendations, bookmarks, and more!</p>
+        <div class="cta-buttons">
+            <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary">Login</a>
+        </div>
+    </div>
+
+    <div class="trending-section">
+        <h2>Trending Now</h2>
+        <div class="articles-grid" id="trending-articles">
+            <!-- Articles will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<style>
+.guest-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.hero-section {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.hero-section h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+    background: linear-gradient(45deg, var(--mdc-theme-primary), var(--mdc-theme-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.search-section {
+    max-width: 800px;
+    margin: 40px auto;
+}
+
+.search-form .input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.cta-section {
+    text-align: center;
+    padding: 40px;
+    background: var(--mdc-theme-surface);
+    border-radius: 12px;
+    margin-bottom: 40px;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.article-card {
+    background: var(--mdc-theme-surface);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.article-card:hover {
+    transform: translateY(-5px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load trending articles
+    fetch('/get_trending_articles')
+        .then(response => response.json())
+        .then(data => {
+            const articlesGrid = document.getElementById('trending-articles');
+            data.articles.forEach(article => {
+                articlesGrid.innerHTML += `
+                    <div class="article-card">
+                        <img src="${article.urlToImage || '/static/placeholder.jpg'}" alt="Article image">
+                        <div class="article-content">
+                            <h3>${article.title}</h3>
+                            <p>${article.description || ''}</p>
+                            <a href="/view_article?url=${encodeURIComponent(article.url)}&title=${encodeURIComponent(article.title)}" 
+                               class="btn btn-link">Read More</a>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+});
+</script>
+{% endblock %} 
