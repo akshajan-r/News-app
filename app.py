@@ -33,6 +33,7 @@ import concurrent.futures
 load_dotenv()
 
 # Get environment variables
+FLASK_APP = os.getenv('FLASK_APP')
 NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///newsapp.db')  # Add default SQLite URL
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev')  # Add default secret key
