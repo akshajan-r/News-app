@@ -69,12 +69,14 @@ def load_user(user_id):
 
 @app.before_request
 def before_request():
-    if 'csrf_token' not in session:
-        session['csrf_token'] = generate_csrf()
+    # generate_csrf() stores the raw token in the session itself. Don't write
+    # its (signed) return value back under the same key, or the token in the
+    # first page a new visitor loads won't validate.
+    generate_csrf()
 
 @app.after_request
 def after_request(response):
-    response.headers.set('X-CSRFToken', session.get('csrf_token', ''))
+    response.headers.set('X-CSRFToken', generate_csrf())
     return response
 
 @app.route("/get_recommended_articles")

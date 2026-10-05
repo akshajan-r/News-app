@@ -1,7 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Dashboard charts script loaded');
-    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif';
-    Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--mdc-theme-on-surface');
+    // Pull colours from the active theme so charts match the page
+    const css = getComputedStyle(document.documentElement);
+    const token = name => css.getPropertyValue(name).trim();
+    const ink = token('--ink');
+    const ink2 = token('--ink-2');
+    const ink3 = token('--ink-3');
+    const rule = token('--rule');
+    const bg = token('--bg');
+    const accent = token('--accent');
+    const accentRgb = token('--accent-rgb');
+    const inkRgb = token('--ink-rgb');
+
+    Chart.defaults.font.family = '"JetBrains Mono", ui-monospace, monospace';
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = ink3;
     Chart.defaults.responsive = true;
     Chart.defaults.maintainAspectRatio = false;
     
@@ -9,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const activityData = document.getElementById('activity-data');
     if (activityData) {
         try {
-            console.log('Creating activity chart');
             const dates = JSON.parse(activityData.dataset.dates);
             const counts = JSON.parse(activityData.dataset.counts);
             
@@ -27,49 +38,53 @@ document.addEventListener('DOMContentLoaded', () => {
                         datasets: [{
                             label: 'Articles Read',
                             data: counts,
-                            borderColor: '#7C4DFF',
-                            backgroundColor: 'rgba(124, 77, 255, 0.2)',
+                            borderColor: accent,
+                            borderWidth: 1.5,
+                            backgroundColor: `rgba(${accentRgb}, 0.08)`,
                             fill: true,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: '#7C4DFF'
+                            tension: 0.25,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointBackgroundColor: accent
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    usePointStyle: true,
-                                    padding: 20
-                                }
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 mode: 'index',
                                 intersect: false,
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
+                                backgroundColor: ink,
+                                titleColor: bg,
+                                bodyColor: bg,
+                                cornerRadius: 2,
+                                padding: 10,
                                 displayColors: false
                             }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
+                                border: { display: false },
                                 grid: {
                                     drawBorder: false,
-                                    color: 'rgba(200, 200, 200, 0.1)'
+                                    color: rule
                                 },
                                 ticks: {
-                                    stepSize: 1
+                                    stepSize: 1,
+                                    padding: 8
                                 }
                             },
                             x: {
+                                border: { color: rule },
                                 grid: {
                                     display: false
+                                },
+                                ticks: {
+                                    maxRotation: 0,
+                                    autoSkipPadding: 24
                                 }
                             }
                         },
@@ -78,8 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             mode: 'nearest'
                         },
                         animation: {
-                            duration: 1000,
-                            easing: 'easeInOutQuart'
+                            duration: 600,
+                            easing: 'easeOutQuart'
                         }
                     }
                 }
@@ -93,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryData = document.getElementById('category-data');
     if (categoryData) {
         try {
-            console.log('Creating category chart');
             const categories = JSON.parse(categoryData.dataset.categories);
             const counts = JSON.parse(categoryData.dataset.counts);
             
@@ -113,14 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         labels: chartLabels,
                         datasets: [{
                             data: chartData,
-                            backgroundColor: [
-                                '#FF6B6B', '#4ECDC4', '#45B7D1', 
-                                '#96CEB4', '#FFEEAD', '#D4A5A5',
-                                '#FFB6B9', '#8785A2', '#A8E6CF',
-                                '#FFAAA5'
-                            ],
+                            // Accent for the top section, then fading steps of ink
+                            backgroundColor: chartData.map((_, i) =>
+                                i === 0 ? accent : `rgba(${inkRgb}, ${Math.max(0.12, 0.7 - i * 0.14)})`),
                             borderWidth: 2,
-                            borderColor: 'rgba(255, 255, 255, 0.8)'
+                            borderColor: bg,
+                            hoverOffset: 4
                         }]
                     },
                     options: {
@@ -128,16 +140,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                position: 'right',
+                                position: 'bottom',
                                 labels: {
-                                    padding: 20,
+                                    color: ink2,
+                                    padding: 16,
+                                    boxWidth: 8,
+                                    boxHeight: 8,
                                     usePointStyle: true,
-                                    pointStyle: 'circle'
+                                    pointStyle: 'rect'
                                 }
                             },
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
+                                backgroundColor: ink,
+                                titleColor: bg,
+                                bodyColor: bg,
+                                cornerRadius: 2,
+                                padding: 10,
                                 callbacks: {
                                     label: function(context) {
                                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -148,10 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             }
                         },
-                        cutout: '60%',
+                        cutout: '72%',
                         animation: {
                             animateRotate: true,
-                            animateScale: true
+                            animateScale: false
                         },
                         hover: {
                             mode: 'nearest',

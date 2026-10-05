@@ -1,84 +1,43 @@
 {% extends "base.html" %}
 
+{% block title %}History — Newsense{% endblock %}
+
 {% block content %}
-<div class="history-container">
-    <h1>Your Reading History</h1>
-    <div class="history-grid">
-        {% for item in history %}
-        <div class="history-card">
-            <h3>{{ item.article_title }}</h3>
-            <div class="history-meta">
-                <span>Read {{ item.read_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                {% if item.category %}
-                <span class="category">{{ item.category }}</span>
-                {% endif %}
-            </div>
-            <div class="history-actions">
-                <a href="{{ item.article_url }}" target="_blank" class="btn-read">Read Again</a>
-                {% if item.bookmarked %}
-                <span class="bookmarked">🔖 Bookmarked</span>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
+<section class="page-intro">
+    <div>
+        <p class="label reveal">Your reading</p>
+        <h1 class="page-title reveal reveal-2">History<em class="serif-em">, newest first.</em></h1>
     </div>
+    <span class="label reveal reveal-3">{{ '%02d' % history | length }} stories</span>
+</section>
+
+{% if history %}
+<ol class="row-list">
+    {% for item in history %}
+    <li class="row-item">
+        <span class="label">{{ item.read_at.strftime('%d %b') }}</span>
+        <div>
+            <a href="{{ url_for('read_article') }}?url={{ item.article_url | urlencode }}&title={{ (item.article_title or '') | urlencode }}">
+                <h3 class="row-title">{{ item.article_title or item.article_url }}</h3>
+            </a>
+            <span class="label">
+                {{ item.read_at.strftime('%H:%M') }}
+                {% if item.category %} // {{ item.category }}{% endif %}
+                {% if item.bookmarked %} // <span class="label-accent">Saved</span>{% endif %}
+            </span>
+        </div>
+        <div class="row-actions">
+            <a class="label" href="{{ item.article_url }}" target="_blank" rel="noopener">Original &nearr;</a>
+        </div>
+    </li>
+    {% endfor %}
+</ol>
+{% else %}
+<div class="empty-state">
+    <span class="label">Nothing yet</span>
+    <p class="display">No stories read so far.</p>
+    <p class="lede">Everything you open in the reader will be listed here.</p>
+    <a class="btn btn-primary" href="{{ url_for('home') }}">Go to the front page</a>
 </div>
-
-<style>
-.history-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.history-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.history-card {
-    background: var(--mdc-theme-surface);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.history-meta {
-    margin: 8px 0;
-    font-size: 14px;
-    opacity: 0.7;
-}
-
-.category {
-    background: var(--mdc-theme-primary);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    margin-left: 8px;
-}
-
-.history-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-}
-
-.btn-read {
-    background: var(--mdc-theme-primary);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 14px;
-}
-
-.bookmarked {
-    opacity: 0.7;
-    font-size: 14px;
-}
-</style>
-{% endblock %} 
+{% endif %}
+{% endblock %}

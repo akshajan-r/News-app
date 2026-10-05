@@ -21,15 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isLargeCard = item.classList.contains('insight-card');
                 const targetGrid = evt.to;
                 
-                if (isLargeCard) {
-                    // If it's a large card, make sure it spans 2 columns
-                    item.classList.add('module-large');
-                    item.style.gridColumn = 'span 2';
-                } else {
-                    // If it's a small card, make it span 1 column
-                    item.classList.add('module-small');
-                    item.style.gridColumn = 'span 1';
-                }
+                // Column spans come from the module-* / size-* classes in dashboard.css
+                item.classList.add(isLargeCard ? 'module-large' : 'module-small');
                 
                 saveLayout();
             },
@@ -60,7 +53,7 @@ function toggleCustomize() {
     
     container.classList.toggle('edit-mode');
     button.classList.toggle('active');
-    button.textContent = editMode ? '✓ Done' : '⚙️ Customize';
+    button.textContent = editMode ? 'Done' : 'Customize';
     
     // Add/remove remove buttons and drag handles
     const modules = document.querySelectorAll('.sortable-grid > div');
