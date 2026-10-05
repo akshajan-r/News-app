@@ -1,0 +1,25 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# In the Render dashboard choose New > Blueprint and pick this repo.
+services:
+  - type: web
+    name: newsense
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Apply any pending database migrations, then serve with gunicorn.
+    # One worker keeps memory inside the free instance's 512 MB.
+    startCommand: flask --app app db upgrade && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: SECRET_KEY
+        generateValue: true
+      # Prompted for when the Blueprint is created
+      - key: NEWS_API_KEY
+        sync: false
+      # Postgres connection string, e.g. from a free Neon database.
+      # Free Render web services wipe their disk on every restart, so
+      # without this, accounts and bookmarks would not survive.
+      - key: DATABASE_URL
+        sync: false

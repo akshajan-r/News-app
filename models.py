@@ -8,7 +8,7 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
     theme = db.Column(db.String(10), nullable=True)
     embedding_vector = db.Column(db.PickleType, nullable=True)
     unlocked_themes = db.Column(db.String, default='light,dark')  # Comma-separated list of unlocked themes
@@ -36,7 +36,7 @@ class ReadArticle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     article_title = db.Column(db.String(500), nullable=True)
-    article_url = db.Column(db.String(500), nullable=False)
+    article_url = db.Column(db.String(2048), nullable=False)
     read_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     category = db.Column(db.String(50), nullable=True)
     interaction_strength = db.Column(db.Float, nullable=True)
@@ -60,7 +60,7 @@ class Bookmark(db.Model):
 class ArticleView(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    article_url = db.Column(db.String(500), nullable=False)
+    article_url = db.Column(db.String(2048), nullable=False)
     article_title = db.Column(db.String(500))
     category = db.Column(db.String(50))
     viewed_at = db.Column(db.DateTime, default=datetime.utcnow)

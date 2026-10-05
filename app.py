@@ -11,7 +11,7 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from models import db, User, SearchHistory, ReadArticle, Bookmark, ArticleView, NewsSource, ManagedArticle, GlobalSettings
 import numpy as np
 from recommendation_model import RecommendationModel
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from nltk.tokenize import word_tokenize
@@ -38,10 +38,19 @@ NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///newsapp.db')  # Add default SQLite URL
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev')  # Add default secret key
 
+# Hosted Postgres providers hand out "postgres://" or "postgresql://" URLs;
+# point SQLAlchemy at the psycopg2 driver explicitly.
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = 'postgresql+psycopg2://' + DATABASE_URL[len('postgres://'):]
+elif DATABASE_URL.startswith('postgresql://'):
+    DATABASE_URL = 'postgresql+psycopg2://' + DATABASE_URL[len('postgresql://'):]
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Hosted databases drop idle connections; check each one before use
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 csrf = CSRFProtect(app)
 csrf.init_app(app)
 
@@ -364,7 +373,7 @@ def get_news():
 def get_user_stats(user_id):
     # Get most active day
     most_active_day_query = db.session.query(
-        func.strftime('%w', ReadArticle.read_at).label('day_of_week'),
+        extract('dow', ReadArticle.read_at).label('day_of_week'),  # 0 = Sunday on SQLite and Postgres
         func.count(ReadArticle.id)
     ).filter_by(user_id=user_id).group_by('day_of_week').order_by(func.count(ReadArticle.id).desc()).first()
 
@@ -372,15 +381,15 @@ def get_user_stats(user_id):
         '0': 'Sunday', '1': 'Monday', '2': 'Tuesday', '3': 'Wednesday',
         '4': 'Thursday', '5': 'Friday', '6': 'Saturday'
     }
-    most_active_day = day_map.get(most_active_day_query[0], 'N/A') if most_active_day_query else 'N/A'
+    most_active_day = day_map.get(str(int(most_active_day_query[0])), 'N/A') if most_active_day_query else 'N/A'
 
     # Get peak reading time
     peak_time_query = db.session.query(
-        func.strftime('%H', ReadArticle.read_at).label('hour'),
+        extract('hour', ReadArticle.read_at).label('hour'),
         func.count(ReadArticle.id)
     ).filter_by(user_id=user_id).group_by('hour').order_by(func.count(ReadArticle.id).desc()).first()
 
-    peak_reading_time = f"{peak_time_query[0]}:00" if peak_time_query else 'N/A'
+    peak_reading_time = f"{int(peak_time_query[0]):02d}:00" if peak_time_query else 'N/A'
 
     # Get other stats with default values
     total_articles = db.session.query(func.count(ReadArticle.id)).filter_by(user_id=user_id).scalar() or 0
@@ -1280,9 +1289,12 @@ def delete_user(user_id):
 @login_required
 @admin_required
 def manage_articles():
-    # Get all article views with user information
+    # Get view stats per article. Every selected column has to be grouped or
+    # aggregated for Postgres (SQLite silently picks an arbitrary row).
     article_views = db.session.query(
-        ArticleView,
+        ArticleView.article_url,
+        func.max(ArticleView.article_title).label('title'),
+        func.max(ArticleView.category).label('category'),
         func.count(ArticleView.id).label('view_count'),
         func.max(ArticleView.viewed_at).label('last_viewed')
     ).group_by(
@@ -1304,14 +1316,14 @@ def manage_articles():
     bookmark_dict = {url: count for url, count in bookmark_counts}
     
     articles_data = []
-    for view, view_count, last_viewed in article_views:
+    for url, title, category, view_count, last_viewed in article_views:
         articles_data.append({
-            'title': view.article_title,
-            'url': view.article_url,
-            'category': view.category,
+            'title': title,
+            'url': url,
+            'category': category,
             'view_count': view_count,
             'last_viewed': last_viewed,
-            'bookmark_count': bookmark_dict.get(view.article_url, 0)
+            'bookmark_count': bookmark_dict.get(url, 0)
         })
     
     return render_template(
