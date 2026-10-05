@@ -142,4 +142,4 @@ class RecommendationModel:
             self.user_profiles = defaultdict(list, model_state['user_profiles'])
             self.vectorizer = model_state['vectorizer']
         except Exception as e:
-            print(f"Error loading model: {e}")
+            print(f"Could not load saved recommendation model, starting fresh: {type(e).__name__}: {e}")

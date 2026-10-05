@@ -51,20 +51,6 @@
                         </form>
                     </td>
                     <td class="actions">
-                        {% if not user.is_admin %}
-                        <form action="{{ url_for('make_admin', user_id=user.id) }}" method="POST" class="inline-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn-make-admin">Make Admin</button>
-                        </form>
-                        {% else %}
-                        <form action="{{ url_for('remove_admin', user_id=user.id) }}" method="POST" class="inline-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn-remove-admin" {% if user.id == current_user.id %}disabled{% endif %}>
-                                Remove Admin
-                            </button>
-                        </form>
-                        {% endif %}
-                        
                         <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" class="inline-form">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn-delete" 

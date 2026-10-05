@@ -37,6 +37,8 @@ FLASK_APP = os.getenv('FLASK_APP')
 NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///newsapp.db')  # Add default SQLite URL
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev')  # Add default secret key
+# The only account allowed to be an admin
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'aks')
 
 # Hosted Postgres providers hand out "postgres://" or "postgresql://" URLs;
 # point SQLAlchemy at the psycopg2 driver explicitly.
@@ -194,6 +196,8 @@ def get_similar_users(user_id, limit=5):
 
 def analyze_sentiment(text):
     """Analyze sentiment of text using TextBlob"""
+    if not text:
+        return (0, 0)
     try:
         analysis = TextBlob(text)
         # Returns (polarity, subjectivity)
@@ -209,7 +213,9 @@ def calculate_article_score(article, user_history):
     
     # 1. Time-based score (0-25 points)
     try:
-        pub_date = datetime.strptime(article.get('publishedAt', ''), '%Y-%m-%dT%H:%M:%SZ')
+        # NewsAPI timestamps are UTC; make the parsed date timezone-aware so it
+        # can be compared with now() below
+        pub_date = datetime.strptime(article.get('publishedAt', ''), '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         time_diff = datetime.now(timezone.utc) - pub_date
         hours_old = time_diff.total_seconds() / 3600
         if hours_old <= 24:  # Less than 24 hours old
@@ -233,9 +239,10 @@ def calculate_article_score(article, user_history):
         total_score += min(topic_overlap * 8, 25)  # 8 points per topic match, max 25
     
     # 3. Sentiment analysis (0-25 points)
-    title_sentiment = analyze_sentiment(article.get('title', ''))
-    desc_sentiment = analyze_sentiment(article.get('description', ''))
-    article_sentiment = (title_sentiment[0] + desc_sentiment[0]) / 2
+    # Score title and description together. Averaging them separately let a
+    # missing description (common in NewsAPI results) halve the title's score.
+    text = ' '.join(part for part in (article.get('title'), article.get('description')) if part)
+    article_sentiment = analyze_sentiment(text)[0]
     
     user_sentiment = get_user_sentiment_preference(user_history)
     sentiment_diff = abs(article_sentiment - user_sentiment)
@@ -273,11 +280,13 @@ def get_user_sentiment_preference(user_history):
 
 def get_sentiment_label(polarity):
     """Convert sentiment polarity to human-readable label"""
+    # Small scores either side of zero read as neutral rather than flipping
+    # between positive and negative on a single mild word
     if polarity > 0.5:
         return 'Very Positive'
-    elif polarity > 0:
+    elif polarity > 0.05:
         return 'Positive'
-    elif polarity == 0:
+    elif polarity >= -0.05:
         return 'Neutral'
     elif polarity > -0.5:
         return 'Negative'
@@ -578,19 +587,14 @@ def signup():
 
         if not signup_errors:
             hashed_password = generate_password_hash(password)
-            # Make the first user an admin
-            is_first_user = User.query.count() == 0
-            print(f"Creating new user. Is first user? {is_first_user}")  # Debug print
-            
+            # Admin rights come only from ADMIN_USERNAME, never from sign-up order
             new_user = User(
                 username=username, 
                 password_hash=hashed_password,
-                is_admin=is_first_user
+                is_admin=(username == ADMIN_USERNAME)
             )
             db.session.add(new_user)
             db.session.commit()
-            
-            print(f"Created user {username} with admin status: {new_user.is_admin}")  # Debug print
             flash('Account created successfully!', 'success')
             return redirect(url_for("login"))
         
@@ -603,6 +607,29 @@ def signup():
 def logout():
     logout_user()
     return redirect(url_for("home"))
+
+_admin_flags_synced = False
+
+@app.before_request
+def enforce_single_admin():
+    """Make ADMIN_USERNAME the only account flagged as admin.
+
+    Runs once per worker process. This clears flags left over from the old
+    rule that made the first account to sign up an admin.
+    """
+    global _admin_flags_synced
+    if _admin_flags_synced:
+        return
+    try:
+        User.query.filter(User.username != ADMIN_USERNAME, User.is_admin == True)\
+            .update({User.is_admin: False}, synchronize_session=False)
+        User.query.filter(User.username == ADMIN_USERNAME, db.or_(User.is_admin == False, User.is_admin.is_(None)))\
+            .update({User.is_admin: True}, synchronize_session=False)
+        db.session.commit()
+        _admin_flags_synced = True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error syncing admin flags: {e}")
 
 @app.before_request
 def apply_universal_theme():
@@ -1218,7 +1245,7 @@ def test_csrf():
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
+        if not current_user.is_authenticated or current_user.username != ADMIN_USERNAME:
             flash('You need to be an admin to access this page.', 'error')
             return redirect(url_for('home'))
         return f(*args, **kwargs)
@@ -1250,24 +1277,14 @@ def admin_dashboard():
 @login_required
 @admin_required
 def make_admin(user_id):
-    user = User.query.get_or_404(user_id)
-    user.is_admin = True
-    db.session.commit()
-    flash(f'Made {user.username} an admin', 'success')
+    flash(f'Only {ADMIN_USERNAME} can be an admin.', 'error')
     return redirect(url_for('admin_dashboard'))
 
 @app.route("/admin/remove_admin/<int:user_id>", methods=['POST'])
 @login_required
 @admin_required
 def remove_admin(user_id):
-    if user_id == current_user.id:
-        flash('You cannot remove your own admin status', 'error')
-        return redirect(url_for('admin_dashboard'))
-        
-    user = User.query.get_or_404(user_id)
-    user.is_admin = False
-    db.session.commit()
-    flash(f'Removed admin status from {user.username}', 'success')
+    flash(f'Only {ADMIN_USERNAME} can be an admin.', 'error')
     return redirect(url_for('admin_dashboard'))
 
 @app.route("/admin/delete_user/<int:user_id>", methods=['POST'])

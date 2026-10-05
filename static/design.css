@@ -939,6 +939,30 @@ label,
     margin-right: -8px;
 }
 
+/* Sentiment ("tone") line on recommended stories */
+.story-tone {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-3);
+}
+
+.tone-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.tone-very-positive,
+.tone-positive { color: var(--ok); }
+
+.tone-negative,
+.tone-very-negative { color: var(--danger); }
+
+.story-tone .tone-label { color: inherit; }
+
 .story-feature {
     grid-column: span 2;
 }

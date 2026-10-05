@@ -123,6 +123,17 @@ const Stories = (() => {
         const meta = [timeAgo(article.publishedAt), `${readingTime(article.description || article.content)} min`]
             .filter(Boolean).join(' · ');
 
+        // Sentiment from the recommender: { label: 'Very Positive' … 'Very Negative', match_score }
+        const s = article.sentiment;
+        const toneKey = s && s.label ? s.label.toLowerCase().replace(/\s+/g, '-') : '';
+        const tone = s && s.label ? `
+            <div class="story-tone tone-${esc(toneKey)}"
+                 title="Tone of this story, and how closely it matches the tone of what you usually read">
+                <span class="tone-dot" aria-hidden="true"></span>
+                <span class="label tone-label">${esc(s.label)}</span>
+                ${s.match_score != null ? `<span class="label">· ${esc(s.match_score)}% tone match</span>` : ''}
+            </div>` : '';
+
         el.innerHTML = `
             <div class="story-index">
                 <span class="label">${esc(index)}${index ? ' // ' : ''}${esc(source)}</span>
@@ -134,6 +145,7 @@ const Stories = (() => {
             </div>` : ''}
             <h3 class="story-title">${esc(article.title)}</h3>
             ${article.description ? `<p class="story-dek">${esc(article.description)}</p>` : ''}
+            ${tone}
             <div class="story-meta">
                 <span class="label">${esc(meta)}</span>
                 ${opts.actions ? `
