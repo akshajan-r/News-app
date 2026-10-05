@@ -1,133 +1,87 @@
 {% extends "base.html" %}
 
+{% block title %}{{ title }} — Newsense{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='stories.js') }}" defer></script>
+{% endblock %}
+
 {% block content %}
-<div class="error-container text-center my-5">
-    <div class="card border-0 shadow">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="card-title mb-0">{{ title }}</h2>
-                {% if current_user.is_authenticated %}
-                <button onclick="toggleBookmark('{{ original_url }}', '{{ title }}', 'general', this)" 
-                        class="btn btn-outline-primary">
-                    <i class="far fa-bookmark me-2"></i>
-                    Add to Bookmarks
-                </button>
-                {% endif %}
-            </div>
-            
-            <div class="alert border-warning bg-warning-subtle text-warning-emphasis mb-4">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ error_message }}
-            </div>
-            
-            <div class="d-grid gap-3">
-                <a href="{{ original_url }}" target="_blank" class="btn btn-primary">
-                    <i class="fas fa-external-link-alt me-2"></i>
-                    Visit Original Article
-                </a>
-                
-                <button onclick="window.history.back()" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Go Back
-                </button>
-            </div>
-        </div>
+{% set host = (original_url.split('/')[2] if original_url and '//' in original_url else original_url) | replace('www.', '') %}
+<article class="reader-fail">
+    <div class="reader-fail-bar">
+        <a href="{{ url_for('home') }}" class="label" onclick="if (history.length > 1) { history.back(); return false; }">&larr; Back</a>
+        <span class="label">{{ host }}</span>
     </div>
-</div>
 
-<script>
-function toggleBookmark(url, title, category, button) {
-    fetch('/toggle_bookmark', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            url: url,
-            title: title,
-            category: category
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Change button text and icon
-            if (data.bookmarked) {
-                button.innerHTML = '<i class="fas fa-bookmark me-2"></i>Bookmarked';
-                button.classList.remove('btn-outline-primary');
-                button.classList.add('btn-primary');
-            } else {
-                button.innerHTML = '<i class="far fa-bookmark me-2"></i>Add to Bookmarks';
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-outline-primary');
-            }
-            // Show toast message
-            showToast(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error saving bookmark');
-    });
-}
+    <p class="label label-accent reveal">Reader unavailable</p>
+    <h1 class="display reveal reveal-2">{{ title }}</h1>
+    <p class="lede reveal reveal-3">
+        We couldn&rsquo;t pull a clean copy of this story. Some publishers block
+        reader views or load their text with scripts. It&rsquo;s still available on
+        their site.
+    </p>
 
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-</script>
+    <div class="reader-fail-actions reveal reveal-4">
+        <a href="{{ original_url }}" target="_blank" rel="noopener" class="btn btn-primary">Open on {{ host }} &nearr;</a>
+        {% if current_user.is_authenticated %}
+        <button type="button" class="btn" onclick="Stories.toggleBookmark(this)"
+                data-url="{{ original_url }}" data-title="{{ title }}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-6-4.2-6 4.2z"/></svg>
+            <span data-label>Save</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <details class="reader-fail-detail">
+        <summary class="label">Technical detail</summary>
+        <p class="mono">{{ error_message }}</p>
+    </details>
+</article>
 
 <style>
-.error-container {
-    max-width: 600px;
+.reader-fail {
+    max-width: 700px;
     margin: 0 auto;
 }
 
-.card {
-    background-color: var(--bs-card-bg);
+.reader-fail-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: clamp(40px, 6vw, 72px);
+    border-bottom: 1px solid var(--rule);
 }
 
-/* Ensure text colors follow theme */
-.card-title {
-    color: var(--bs-emphasis-color);
+.reader-fail .display {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.04;
+    margin: 20px 0 24px;
 }
 
-/* Alert customization */
-.alert {
-    border-width: 2px;
+.reader-fail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 36px;
 }
 
-[data-bs-theme="dark"] .alert {
-    background-color: rgba(var(--bs-warning-rgb), 0.15) !important;
-    border-color: var(--bs-warning) !important;
-    color: var(--bs-warning) !important;
+.reader-fail-detail {
+    margin-top: 56px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
 }
 
-/* Toast notification */
-.toast-notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: var(--bs-dark);
-    color: white;
-    padding: 1rem;
-    border-radius: 4px;
-    z-index: 1000;
-    animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+.reader-fail-detail summary {
+    cursor: pointer;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(20px); }
+.reader-fail-detail p {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--ink-3);
+    word-break: break-word;
 }
 </style>
-{% endblock %} 
+{% endblock %}

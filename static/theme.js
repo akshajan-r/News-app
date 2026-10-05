@@ -1,37 +1,50 @@
+// Themes, in the order they appear in the masthead. `bg`/`accent` drive the swatch.
+const THEMES = {
+    dark:   { name: 'Dark',   bg: '#0b0b0a', accent: '#e0603f', required_streak: 0 },
+    light:  { name: 'Light',  bg: '#f3f1eb', accent: '#c4432a', required_streak: 0 },
+    mono:   { name: 'Mono',   bg: '#000000', accent: '#f2f2f2', required_streak: 1 },
+    sunset: { name: 'Sunset', bg: '#14100e', accent: '#e8955c', required_streak: 7 },
+    ocean:  { name: 'Ocean',  bg: '#0a0f12', accent: '#6fb6c8', required_streak: 14 },
+    forest: { name: 'Forest', bg: '#0c100d', accent: '#93bb84', required_streak: 30 }
+};
+
+// Only these are accepted by /set_theme
+const SERVER_THEMES = ['light', 'dark'];
+
+function storeTheme(theme) {
+    try { localStorage.setItem('theme', theme); } catch (e) {}
+}
+
+function readStoredTheme() {
+    try { return localStorage.getItem('theme'); } catch (e) { return null; }
+}
+
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     // Only save to localStorage if there's no universal theme
     if (!document.querySelector('meta[name="universal-theme"]')) {
-        localStorage.setItem('theme', theme);
+        storeTheme(theme);
     }
+    markCurrentSwatch();
 }
 
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    const button = document.getElementById('theme-toggle');
-    if (button) {
-        button.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
-    }
-    
-    if (theme === 'dark') {
-        document.body.classList.add('custom-theme');
-    } else {
-        document.body.classList.remove('custom-theme');
-    }
-    localStorage.setItem('theme', theme);
-    createBackgroundElements(theme);
+    storeTheme(theme);
+    markCurrentSwatch();
 }
-  
+
 function toggleTheme() {
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    updateThemeOnServer(newTheme);
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    updateThemeOnServer(next);
 }
-  
+
 function updateThemeOnServer(theme) {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-    
+    if (!SERVER_THEMES.includes(theme)) return;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
     fetch('/set_theme', {
         method: 'POST',
         headers: {
@@ -40,123 +53,81 @@ function updateThemeOnServer(theme) {
         },
         body: JSON.stringify({ theme: theme }),
         credentials: 'same-origin'
-    })
-    .catch(error => {
-        console.error('Error updating theme:', error);
-        const currentTheme = localStorage.getItem('theme');
-        setTheme(currentTheme || 'light');
+    }).catch(error => console.error('Error updating theme:', error));
+}
+
+function markCurrentSwatch() {
+    const current = document.documentElement.getAttribute('data-theme');
+    document.querySelectorAll('.theme-swatch').forEach(el => {
+        el.classList.toggle('is-current', el.dataset.theme === current);
+        el.setAttribute('aria-pressed', el.dataset.theme === current ? 'true' : 'false');
     });
 }
-  
-// Apply theme on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for user-specific theme first
+
+function updateThemeSelector() {
+    const container = document.getElementById('theme-selector');
+    if (!container) return;
+
+    const userStreak = parseInt(document.querySelector('meta[name="user-streak"]')?.content || '0', 10);
+
+    container.innerHTML = Object.entries(THEMES).map(([id, theme]) => {
+        const isUnlocked = theme.required_streak <= userStreak;
+        const title = isUnlocked
+            ? `${theme.name} theme`
+            : `${theme.name} — unlocks at a ${theme.required_streak}-day streak (${theme.required_streak - userStreak} to go)`;
+        return `
+            <button type="button"
+                    class="theme-swatch ${isUnlocked ? '' : 'locked'}"
+                    data-theme="${id}"
+                    style="--swatch-bg:${theme.bg};--swatch-accent:${theme.accent}"
+                    title="${title}"
+                    aria-label="${title}"
+                    ${isUnlocked ? '' : 'disabled'}></button>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.theme-swatch:not(.locked)').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setTheme(btn.dataset.theme);
+            updateThemeOnServer(btn.dataset.theme);
+        });
+    });
+
+    markCurrentSwatch();
+}
+
+// Resolve the theme on load. A universal (admin) theme wins; otherwise a locally
+// picked unlockable theme (which the server can't store) beats the account
+// setting; otherwise the account setting, then whatever was saved locally.
+document.addEventListener('DOMContentLoaded', function () {
     const userTheme = document.querySelector('meta[name="user-theme"]')?.content;
-    if (userTheme) {
-        applyTheme(userTheme);
-        return;
-    }
-    
-    // Then check for universal theme
     const universalTheme = document.querySelector('meta[name="universal-theme"]')?.content;
+    const savedTheme = readStoredTheme();
+
+    let theme;
     if (universalTheme) {
-        applyTheme(universalTheme);
-        return;
+        theme = universalTheme;
+    } else if (savedTheme && !SERVER_THEMES.includes(savedTheme)) {
+        theme = savedTheme;
+    } else {
+        theme = userTheme || savedTheme;
     }
-    
-    // Finally fall back to saved theme or default
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    applyTheme(savedTheme);
-    
-    // Add event listener for theme toggle button
+    if (theme) applyTheme(theme);
+
     const toggleButton = document.getElementById('theme-toggle');
     if (toggleButton) {
         toggleButton.addEventListener('click', toggleTheme);
     }
-});
-  
-// Handle theme for dynamic content (simplified)
-window.addEventListener('load', () => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        setTheme(savedTheme);
-    }
-});
 
-function updateThemeSelector() {
-    const themes = {
-        light: { name: 'Light', icon: '☀️', required_streak: 0 },
-        dark: { name: 'Dark', icon: '🌙', required_streak: 0 },
-        mono: { name: 'Mono', icon: '◾', required_streak: 1 },
-        mystery1: { name: 'Sunset', icon: '🌅', required_streak: 7 },
-        mystery2: { name: 'Ocean', icon: '🌊', required_streak: 14 },
-        mystery3: { name: 'Forest', icon: '🌲', required_streak: 30 }
-    };
-    
-    const container = document.getElementById('theme-selector');
-    if (!container) return;
-
-    const userStreak = parseInt(document.querySelector('meta[name="user-streak"]')?.content || '0');
-    const unlockedThemes = (document.querySelector('meta[name="unlocked-themes"]')?.content || 'light,dark').split(',');
-    
-    container.innerHTML = Object.entries(themes).map(([id, theme]) => {
-        const isUnlocked = theme.required_streak <= userStreak;
-        const realThemeName = id === 'mystery1' ? 'sunset' : 
-                            id === 'mystery2' ? 'ocean' : 
-                            id === 'mystery3' ? 'forest' : id;
-        
-        return `
-            <div class="theme-option ${isUnlocked ? '' : 'locked'}" 
-                 ${isUnlocked ? `onclick="setTheme('${realThemeName}')"` : ''}
-                 title="${isUnlocked ? 
-                        'Click to apply theme' : 
-                        `${theme.required_streak - userStreak} more days to unlock`}">
-                <span class="theme-icon">${theme.icon}</span>
-                <span class="theme-name">${theme.name}</span>
-                ${!isUnlocked ? 
-                  `<span class="days-required">${theme.required_streak}d</span>` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-// Add this to show the theme selector
-document.addEventListener('DOMContentLoaded', () => {
-    // Add theme selector to navbar
-    const navbar = document.querySelector('.navbar-nav');
-    if (navbar) {
-        const themeSelector = document.createElement('div');
-        themeSelector.id = 'theme-selector';
-        themeSelector.className = 'theme-selector';
-        navbar.insertBefore(themeSelector, navbar.firstChild);
+    // Mount the swatch row into the masthead
+    const slot = document.getElementById('theme-slot');
+    if (slot) {
+        const selector = document.createElement('div');
+        selector.id = 'theme-selector';
+        selector.className = 'theme-selector';
+        selector.setAttribute('role', 'group');
+        selector.setAttribute('aria-label', 'Theme');
+        slot.appendChild(selector);
         updateThemeSelector();
     }
-});
-
-function createBackgroundElements(theme) {
-    // Remove existing elements
-    document.querySelectorAll('.bg-element').forEach(el => el.remove());
-    
-    // Create new elements based on theme
-    const count = 5; // Keep the number low for subtle effect
-    for (let i = 0; i < count; i++) {
-        const el = document.createElement('div');
-        el.className = 'bg-element';
-        el.style.setProperty('--x', `${Math.random() * 100}vw`);
-        el.style.left = `${Math.random() * 100}vw`;
-        el.style.animationDelay = `${Math.random() * 10}s`;
-        document.body.appendChild(el);
-    }
-}
-
-// Add this to your existing code
-document.addEventListener('mousemove', (e) => {
-    const cards = document.querySelectorAll('.article-card, .preferences-card, .stats-card');
-    cards.forEach(card => {
-        const rect = card.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / card.offsetWidth) * 100;
-        const y = ((e.clientY - rect.top) / card.offsetHeight) * 100;
-        card.style.setProperty('--x', `${x}%`);
-        card.style.setProperty('--y', `${y}%`);
-    });
 });

@@ -1,155 +1,103 @@
 {% extends "base.html" %}
 
+{% block title %}Saved — Newsense{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='stories.js') }}" defer></script>
+{% endblock %}
+
 {% block content %}
-<div class="bookmarks-container">
-    <h1>Your Bookmarks</h1>
-    <div class="bookmarks-grid" id="bookmarks-container">
-        <!-- Bookmarks will be loaded here -->
+<section class="page-intro">
+    <div>
+        <p class="label reveal">Your library</p>
+        <h1 class="page-title reveal reveal-2">Saved <em class="serif-em">for later.</em></h1>
     </div>
-</div>
+    <span class="label reveal reveal-3" id="saved-count"></span>
+</section>
 
-<style>
-.bookmarks-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.bookmarks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.bookmark-card {
-    background: var(--mdc-theme-surface);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: transform 0.2s ease;
-}
-
-.bookmark-card:hover {
-    transform: translateY(-4px);
-}
-
-.bookmark-meta {
-    margin: 8px 0;
-    font-size: 14px;
-    opacity: 0.7;
-}
-
-.bookmark-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-}
-
-.btn-read {
-    background: var(--mdc-theme-primary);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 14px;
-}
-
-.btn-remove {
-    background: none;
-    border: none;
-    color: var(--mdc-theme-error);
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.btn-remove:hover {
-    background: rgba(var(--mdc-theme-error-rgb), 0.1);
-}
-
-.no-bookmarks {
-    text-align: center;
-    padding: 40px;
-    color: var(--mdc-theme-on-surface);
-    opacity: 0.7;
-}
-</style>
+<ol class="row-list" id="bookmarks-container" aria-live="polite">
+    {% for i in range(3) %}
+    <li class="row-item" aria-hidden="true">
+        <span class="label">{{ '%02d' % (i + 1) }}</span>
+        <div>
+            <div class="skeleton-line" style="width: 80%; height: 20px"></div>
+            <div class="skeleton-line" style="width: 25%; margin-top: 10px"></div>
+        </div>
+        <span></span>
+    </li>
+    {% endfor %}
+</ol>
 
 <script>
 document.addEventListener('DOMContentLoaded', loadBookmarks);
 
-function getTimeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-}
-
 function loadBookmarks() {
+    const container = document.getElementById('bookmarks-container');
+    const count = document.getElementById('saved-count');
+
     fetch('/get_bookmarks')
         .then(response => response.json())
         .then(data => {
-            const container = document.getElementById('bookmarks-container');
-            if (data.bookmarks.length === 0) {
-                container.innerHTML = '<div class="no-bookmarks">No bookmarks yet! Start saving articles you want to read later.</div>';
+            const items = data.bookmarks || [];
+            count.textContent = `${String(items.length).padStart(2, '0')} stories`;
+
+            if (!items.length) {
+                container.innerHTML = `
+                    <li class="empty-state">
+                        <span class="label">Nothing saved</span>
+                        <p class="display">Your library is empty.</p>
+                        <p class="lede">Use the bookmark on any story to keep it here for later.</p>
+                    </li>`;
                 return;
             }
-            
-            container.innerHTML = data.bookmarks.map(bookmark => `
-                <div class="bookmark-card">
-                    <h3>
-                        <a href="/view_article?url=${encodeURIComponent(bookmark.url)}&title=${encodeURIComponent(bookmark.title)}"
-                           class="article-title">
-                            ${bookmark.title}
-                        </a>
-                    </h3>
-                    <div class="bookmark-meta">
-                        <span>Saved ${getTimeAgo(bookmark.bookmarked_at)}</span>
+
+            container.innerHTML = '';
+            items.forEach((b, i) => {
+                const li = document.createElement('li');
+                li.className = 'row-item';
+                const reader = Stories.readerUrl({ url: b.url, title: b.title });
+                li.innerHTML = `
+                    <span class="label">${String(i + 1).padStart(2, '0')}</span>
+                    <div>
+                        <a href="${reader}"><h3 class="row-title">${Stories.esc(b.title || b.url)}</h3></a>
+                        <span class="label">Saved ${Stories.esc(Stories.timeAgo(b.bookmarked_at))}</span>
                     </div>
-                    <div class="bookmark-actions">
-                        <a href="/view_article?url=${encodeURIComponent(bookmark.url)}&title=${encodeURIComponent(bookmark.title)}" 
-                           class="btn-read">
-                            Read Article
-                        </a>
-                        <button onclick="removeBookmark('${bookmark.url}')" class="btn-remove">
-                            🗑️ Remove
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+                    <div class="row-actions">
+                        <a class="label" href="${Stories.esc(b.url)}" target="_blank" rel="noopener">Original &nearr;</a>
+                        <button type="button" class="btn btn-sm btn-danger" data-remove>Remove</button>
+                    </div>`;
+                li.querySelector('[data-remove]').addEventListener('click', () => removeBookmark(b.url, li));
+                container.appendChild(li);
+            });
         })
         .catch(error => {
             console.error('Error loading bookmarks:', error);
-            document.getElementById('bookmarks-container').innerHTML = 
-                '<div class="error">Failed to load bookmarks</div>';
+            container.innerHTML = `
+                <li class="empty-state">
+                    <span class="label label-accent">Connection lost</span>
+                    <p class="display">Couldn&rsquo;t load your library.</p>
+                </li>`;
         });
 }
 
-function removeBookmark(url) {
+function removeBookmark(url, row) {
     fetch('/remove_bookmark', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': Stories.csrf()
         },
         body: JSON.stringify({ url })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            loadBookmarks();  // Refresh the bookmarks list
-        }
-    })
-    .catch(error => {
-        console.error('Error removing bookmark:', error);
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                row.style.opacity = '0.3';
+                Stories.toast('Removed from saved');
+                setTimeout(loadBookmarks, 250);
+            }
+        })
+        .catch(() => Stories.toast('Could not remove story'));
 }
 </script>
-{% endblock %} 
+{% endblock %}

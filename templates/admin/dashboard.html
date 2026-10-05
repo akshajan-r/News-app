@@ -36,7 +36,7 @@
                 <tr>
                     <td>{{ user.username }}</td>
                     <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
-                    <td>{{ '✓' if user.is_admin else '✗' }}</td>
+                    <td>{{ 'Admin' if user.is_admin else '—' }}</td>
                     <td>
                         <form action="{{ url_for('set_user_theme', user_id=user.id) }}" method="POST" class="inline-form theme-select-form">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -100,15 +100,15 @@
             </form>
         </div>
     </div>
-</div>
 
-<div class="admin-nav">
-    <a href="{{ url_for('manage_articles') }}" class="nav-item">
-        📰 Manage Articles
-    </a>
-    <a href="{{ url_for('manage_sources') }}" class="nav-item">
-        🌐 Manage Sources
-    </a>
+    <div class="admin-nav">
+        <a href="{{ url_for('manage_articles') }}" class="nav-item">
+            Manage articles &rarr;
+        </a>
+        <a href="{{ url_for('manage_sources') }}" class="nav-item">
+            Manage sources &rarr;
+        </a>
+    </div>
 </div>
 
 <style>
@@ -128,7 +128,7 @@
 .stat-card {
     background: var(--mdc-theme-surface);
     padding: 20px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     text-align: center;
 }
 
@@ -141,7 +141,7 @@
 .users-table {
     background: var(--mdc-theme-surface);
     padding: 20px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     overflow-x: auto;
 }
 
@@ -153,7 +153,7 @@ table {
 th, td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--rule);
 }
 
 .actions {
@@ -167,7 +167,7 @@ th, td {
 
 button {
     padding: 6px 12px;
-    border-radius: 4px;
+    border-radius: var(--radius);
     border: none;
     cursor: pointer;
 }
@@ -198,7 +198,7 @@ button:disabled {
     margin-top: 24px;
     padding: 16px;
     background: var(--mdc-theme-surface);
-    border-radius: 8px;
+    border-radius: var(--radius);
 }
 
 .nav-item {
@@ -209,14 +209,12 @@ button:disabled {
     background: var(--mdc-theme-primary);
     color: white;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: var(--radius);
     font-weight: 500;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: background-color 0.15s, border-color 0.15s;
 }
 
 .nav-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     color: white;
 }
 
@@ -228,14 +226,12 @@ button:disabled {
     background: var(--mdc-theme-surface-2);
     color: var(--mdc-theme-on-surface);
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: var(--radius);
     font-weight: 500;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: background-color 0.15s, border-color 0.15s;
 }
 
 .nav-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     color: var(--mdc-theme-on-surface);
 }
 
@@ -251,7 +247,7 @@ button:disabled {
 .theme-management {
     background: var(--mdc-theme-surface);
     padding: 20px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     margin-top: 24px;
 }
 
@@ -276,10 +272,10 @@ button:disabled {
 .theme-form select {
     width: 100%;
     padding: 8px;
-    border-radius: 4px;
+    border-radius: var(--radius);
     background: var(--mdc-theme-surface-2);
     color: var(--mdc-theme-on-surface);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--rule);
 }
 
 .btn-submit {
@@ -287,13 +283,11 @@ button:disabled {
     color: white;
     border: none;
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: var(--radius);
     cursor: pointer;
 }
 
 .btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .theme-select-form {
@@ -302,10 +296,10 @@ button:disabled {
 
 .theme-select {
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius);
     background: var(--mdc-theme-surface-2);
     color: var(--mdc-theme-on-surface);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--rule);
     cursor: pointer;
 }
 

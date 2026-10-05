@@ -1,88 +1,64 @@
 {% extends "base.html" %}
 
-{% block navbar %}{% endblock %}
-{% block footer %}{% endblock %}
+{% block title %}Sign in — Newsense{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 {% endblock %}
 
-{% block content %}
-<div class="cursor-follower"></div>
-<div class="cursor-dot"></div>
-
-<div class="auth-container">
-    <div class="animated-background"></div>
-    <div class="auth-card">
-        <a href="{{ url_for('home') }}" class="back-link">
-            <span class="back-icon">←</span>
+{% block navbar %}
+<header class="auth-bar">
+    <div class="page auth-bar-inner">
+        <a class="wordmark" href="{{ url_for('home') }}">
+            <span class="wordmark-mark"></span>
+            <span>Newsense</span>
         </a>
-        
-        <div class="auth-header">
-            <h2 class="gradient-text">Welcome Back</h2>
-            <p class="auth-subtitle">Continue your personalised news journey</p>
-        </div>
-        
-        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
-            {{ form.hidden_tag() }}
-            <div class="form-group">
-                <div class="input-wrapper">
-                    {{ form.username(class="form-control", placeholder=" ") }}
-                    <label for="username">Username</label>
-                    <div class="input-highlight"></div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="input-wrapper">
-                    {{ form.password(class="form-control", placeholder=" ") }}
-                    <label for="password">Password</label>
-                    <div class="input-highlight"></div>
-                </div>
-            </div>
-            
-            {% if login_error %}
-            <div class="alert alert-danger">
-                <span class="alert-icon">⚠️</span>
-                {{ login_error }}
-            </div>
-            {% endif %}
-            
-            <button type="submit" class="auth-button">
-                <span>Login</span>
-                <div class="button-highlight"></div>
-            </button>
-        </form>
-        
-        <div class="auth-footer">
-            <p>Don't have an account? <a href="{{ url_for('signup') }}" class="auth-link">Sign up</a></p>
-        </div>
+        <a class="label" href="{{ url_for('home') }}">&larr; Back</a>
     </div>
-</div>
+</header>
+{% endblock %}
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Add animation classes when page loads
-    document.querySelector('.auth-card').classList.add('fade-in');
-    
-    // Add floating effect to input labels
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        input.addEventListener('focus', () => {
-            input.parentElement.classList.add('focused');
-        });
-        
-        input.addEventListener('blur', () => {
-            if (!input.value) {
-                input.parentElement.classList.remove('focused');
-            }
-        });
-        
-        // Check initial state
-        if (input.value) {
-            input.parentElement.classList.add('focused');
-        }
-    });
-});
-</script>
+{% block main %}
+<main class="page auth">
+    <section class="auth-aside">
+        <div>
+            <p class="label reveal">Sign in</p>
+            <h1 class="display auth-title reveal reveal-2">Welcome<br><em>back.</em></h1>
+        </div>
+        <p class="auth-quote reveal reveal-3">
+            Your front page, saved stories and reading streak are where you left them.
+        </p>
+    </section>
+
+    <section class="auth-panel">
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form reveal reveal-3">
+            {{ form.hidden_tag() }}
+
+            <div class="field">
+                <label class="label" for="username">Username</label>
+                {{ form.username(class="form-control", autocomplete="username", autofocus=true) }}
+            </div>
+
+            <div class="field">
+                <label class="label" for="password">Password</label>
+                {{ form.password(class="form-control", autocomplete="current-password") }}
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <div class="alert {{ 'alert-danger' if category in ['error', 'danger'] else 'alert-success' }}" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% endwith %}
+            {% if login_error %}
+            <div class="alert alert-danger" role="alert">{{ login_error }}</div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary auth-submit">Sign in</button>
+
+            <p class="auth-switch">
+                New here? <a href="{{ url_for('signup') }}">Create an account</a>
+            </p>
+        </form>
+    </section>
+</main>
 {% endblock %}

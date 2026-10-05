@@ -1,428 +1,208 @@
 {% extends "base.html" %}
 
+{% block title %}{{ title }} — Newsense{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='stories.js') }}" defer></script>
+{% endblock %}
+
 {% block content %}
-<div class="reader-container">
-    <div class="reader-header">
-        <div class="header-left">
-            <a href="{{ url_for('home') }}" class="btn btn-link">
-                <i class="fas fa-arrow-left me-2"></i>
-                Back to News
-            </a>
-        </div>
-        <div class="header-right">
+{% set host = (source_url.split('/')[2] if source_url and '//' in source_url else source_url) | replace('www.', '') %}
+<div class="reader-progress" aria-hidden="true"><span id="reader-progress-bar"></span></div>
+
+<article class="reader">
+    <div class="reader-bar">
+        <a href="{{ url_for('home') }}" class="label" onclick="if (history.length > 1) { history.back(); return false; }">&larr; Back</a>
+        <div class="reader-tools">
             {% if current_user.is_authenticated %}
-            <button onclick="toggleBookmark('{{ source_url }}', '{{ title }}', 'general', this)" 
-                    class="btn btn-outline-primary">
-                <i class="far fa-bookmark me-2"></i>
-                Add to Bookmarks
+            <button type="button" class="btn btn-sm" onclick="Stories.toggleBookmark(this)"
+                    data-url="{{ source_url }}" data-title="{{ title }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-6-4.2-6 4.2z"/></svg>
+                <span data-label>Save</span>
             </button>
             {% endif %}
+            <button type="button" class="btn btn-sm" onclick="Stories.share(this.dataset.url, this.dataset.title)"
+                    data-url="{{ source_url }}" data-title="{{ title }}">Share</button>
         </div>
     </div>
-    
-    <div class="article-content">
-        <h1 class="article-title">{{ title }}</h1>
-        
-        {% if images %}
-        <div class="article-image">
-            <img src="{{ images[0].src }}" 
-                 alt="{{ images[0].alt }}" 
-                 onerror="this.onerror=null; this.src='/static/placeholder.jpg'"
-                 loading="lazy">
-            {% if images[0].caption %}
-            <div class="image-caption">{{ images[0].caption }}</div>
-            {% endif %}
-        </div>
+
+    <header class="reader-head">
+        <p class="label reveal">
+            <span class="label-accent">Reader</span> // {{ host }}
+            <span class="reader-time" id="reader-time"></span>
+        </p>
+        <h1 class="reader-title reveal reveal-2">{{ title }}</h1>
+    </header>
+
+    {% if images %}
+    <figure class="reader-figure reveal reveal-3">
+        <img src="{{ images[0].src }}" alt="{{ images[0].alt }}"
+             onerror="this.closest('figure').remove()" loading="lazy">
+        {% if images[0].caption %}
+        <figcaption class="label">{{ images[0].caption }}</figcaption>
         {% endif %}
-        
-        <div class="content-body">
-            {% for block in content %}
-                {% if block.type in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] %}
-                    <h{{ block.type[1] }} class="content-heading">{{ block.content }}</h{{ block.type[1] }}>
-                {% elif block.type == 'blockquote' %}
-                    <blockquote>{{ block.content }}</blockquote>
-                {% else %}
-                    <p>{{ block.content }}</p>
-                {% endif %}
-            {% endfor %}
-        </div>
+    </figure>
+    {% endif %}
 
-        <div class="article-footer">
-            <a href="{{ source_url }}" target="_blank" class="btn btn-primary">
-                <i class="fas fa-external-link-alt me-2"></i>
-                Read Original Article
-            </a>
-        </div>
+    <div class="reader-body reveal reveal-3" id="reader-body">
+        {% for block in content %}
+            {% if block.type in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] %}
+                <h2>{{ block.content }}</h2>
+            {% elif block.type == 'blockquote' %}
+                <blockquote>{{ block.content }}</blockquote>
+            {% else %}
+                <p>{{ block.content }}</p>
+            {% endif %}
+        {% endfor %}
     </div>
-</div>
 
-<script>
-function toggleBookmark(url, title, category, button) {
-    fetch('/toggle_bookmark', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            url: url,
-            title: title,
-            category: category
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            if (data.bookmarked) {
-                button.innerHTML = '<i class="fas fa-bookmark me-2"></i>Bookmarked';
-                button.classList.remove('btn-outline-primary');
-                button.classList.add('btn-primary');
-            } else {
-                button.innerHTML = '<i class="far fa-bookmark me-2"></i>Add to Bookmarks';
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-outline-primary');
-            }
-            showToast(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error saving bookmark');
-    });
-}
-
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-</script>
+    <footer class="reader-foot">
+        <span class="label">End of article</span>
+        <a href="{{ source_url }}" target="_blank" rel="noopener" class="btn">
+            Read the original on {{ host }} &nearr;
+        </a>
+    </footer>
+</article>
 
 <style>
-.reader-container {
-    max-width: min(90%, 800px);
-    margin: 2rem auto;
-    padding: 20px;
-    min-height: calc(100vh - 120px);
-    background-color: transparent;
+.reader {
+    max-width: 700px;
+    margin: 0 auto;
 }
 
-/* Base styles for all themes */
-.article-content, .reader-header {
-    padding: clamp(1.5rem, 5vw, 3rem);
-    border-radius: 20px;
-    line-height: 1.8;
-    border: 1px solid var(--bs-border-color);
-    margin: 1rem auto;
-    max-width: 800px;
+.reader-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 60;
+    pointer-events: none;
 }
 
-.reader-header {
+.reader-progress span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+}
+
+.reader-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--rule);
 }
 
-/* Theme-specific background colors */
-/* Light theme (default) */
-.article-content, 
-.reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-    transition: background-color 0.3s ease;
+.reader-tools {
+    display: flex;
+    gap: 8px;
 }
 
-[data-theme="dark"] .article-content,
-[data-theme="dark"] .reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+.reader-head {
+    padding: clamp(40px, 6vw, 72px) 0 clamp(28px, 4vw, 40px);
 }
 
-[data-theme="light"] .article-content,
-[data-theme="light"] .reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+.reader-time::before {
+    content: ' // ';
 }
 
-/* Rest of your styles */
-.article-title {
-    font-size: clamp(1.8rem, 3vw, 2.2rem);
-    line-height: 1.3;
-    margin-bottom: 1.5rem;
-    font-weight: 700;
-    color: var(--bs-emphasis-color);
-    letter-spacing: -0.01em;
+.reader-time:empty::before {
+    content: '';
 }
 
-.article-image {
-    margin: 1.5rem 0;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--bs-border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.reader-title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(38px, 5.6vw, 64px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    margin: 20px 0 0;
 }
 
-/* Make image backgrounds match parent theme */
-.article-image, .image-caption {
-    background-color: inherit;
+.reader-figure {
+    margin: 0 0 clamp(32px, 5vw, 48px);
 }
 
-.article-image img {
+.reader-figure img {
     width: 100%;
-    height: auto;
     display: block;
+    border: 1px solid var(--rule);
 }
 
-.image-caption {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-    color: var(--bs-secondary-color);
-    text-align: center;
-    border-top: 1px solid var(--bs-border-color);
+.reader-figure figcaption {
+    padding-top: 10px;
+    text-transform: none;
+    letter-spacing: 0.02em;
 }
 
-.content-body {
-    font-size: clamp(1rem, 1.5vw, 1.15em);
-    line-height: 1.8;
-    letter-spacing: 0.01em;
-    color: var(--bs-body-color);
+.reader-body {
+    font-family: var(--font-read);
+    font-size: clamp(18px, 1.6vw, 20px);
+    line-height: 1.7;
+    color: var(--ink);
+    font-optical-sizing: auto;
 }
 
-.content-body p {
-    margin-bottom: 1.2rem;
+.reader-body p {
+    margin: 0 0 1.25em;
 }
 
-.content-heading {
-    color: var(--bs-emphasis-color);
-    margin: 1.8rem 0 0.8rem;
+.reader-body > p:first-child::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-size: 4.4em;
+    line-height: 0.82;
+    padding: 0.06em 0.1em 0 0;
+    color: var(--ink);
 }
 
-blockquote {
-    margin: 1.5rem 0;
-    padding: 1.2rem 1.5rem;
-    border-left: 4px solid var(--bs-primary);
+.reader-body h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.6em;
+    line-height: 1.15;
+    margin: 1.8em 0 0.6em;
+}
+
+.reader-body blockquote {
+    margin: 1.8em 0;
+    padding: 0 0 0 24px;
+    border-left: 1px solid var(--accent);
     font-style: italic;
-    color: var(--bs-body-color);
-    border-radius: 12px;
-    border: 1px solid var(--bs-border-color);
+    font-size: 1.15em;
+    color: var(--ink-2);
 }
 
-/* Theme-specific blockquote backgrounds */
-[data-bs-theme="light"] blockquote {
-    background-color: rgba(0, 0, 0, 0.03);
-}
-
-[data-bs-theme="dark"] blockquote,
-[data-bs-theme="moon"] blockquote,
-[data-bs-theme="forest"] blockquote,
-[data-bs-theme="ocean"] blockquote,
-[data-bs-theme="sunset"] blockquote {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.article-footer {
-    margin-top: 2.5rem;
-    text-align: center;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--bs-border-color);
-}
-
-.header-left a, 
-.header-right button {
-    border-radius: 10px;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s ease;
-}
-
-.header-left a:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.1);
-}
-
-.toast-notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    color: var(--bs-body-color);
-    padding: 0.8rem 1.2rem;
-    border-radius: 12px;
-    border: 1px solid var(--bs-border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
-}
-
-/* Match toast background to theme */
-[data-bs-theme="light"] .toast-notification {
-    background-color: #ffffff;
-}
-
-[data-bs-theme="dark"] .toast-notification {
-    background-color: #212529;
-}
-
-[data-bs-theme="moon"] .toast-notification {
-    background-color: #2b2b2b;
-}
-
-[data-bs-theme="forest"] .toast-notification {
-    background-color: #2a3a2a;
-}
-
-[data-bs-theme="ocean"] .toast-notification {
-    background-color: #1e3a4a;
-}
-
-[data-bs-theme="sunset"] .toast-notification {
-    background-color: #3a2a30;
-}
-
-/* Theme-specific article content styles */
-[data-bs-theme="light"] .article-content {
-    background-color: #ffffff;
-    color: #1a1a1a;
-}
-
-[data-bs-theme="dark"] .article-content {
-    background-color: #1a1a1a;
-    color: #f0f0f0;
-}
-
-[data-bs-theme="forest"] .article-content {
-    background-color: #1a2a1a;
-    color: #e8f0e8;
-}
-
-[data-bs-theme="ocean"] .article-content {
-    background-color: #1a2a3a;
-    color: #e8f0f8;
-}
-
-[data-bs-theme="sunset"] .article-content {
-    background-color: #2a1a20;
-    color: #f8e8e8;
-}
-
-[data-bs-theme="moon"] .article-content {
-    background-color: #1a1a1a;
-    color: #f0f0f0;
-}
-
-/* Ensure consistent contrast for all themes */
-.content-body {
-    font-size: clamp(1rem, 1.5vw, 1.15em);
-    line-height: 1.8;
-    letter-spacing: 0.01em;
-    opacity: 0.95;
-}
-
-/* Improve blockquote contrast */
-blockquote {
-    background-color: rgba(var(--bs-primary-rgb), 0.1);
-    color: var(--bs-body-color);
-    border-left: 4px solid var(--bs-primary);
-    margin: 1.5rem 0;
-    padding: 1.2rem 1.5rem;
-    font-style: italic;
-}
-
-[data-bs-theme="forest"] .article-content {
-    background-color: #1a2a1a;
-    color: #e0e8e0;
-}
-
-[data-bs-theme="ocean"] .article-content {
-    background-color: #1a2a3a;
-    color: #e0e8f0;
-}
-
-[data-bs-theme="sunset"] .article-content,
-[data-bs-theme="sunset"] .reader-header {
-    background-color: #2a1a20;
-}
-
-[data-bs-theme="moon"] .article-content,
-[data-bs-theme="moon"] .reader-header {
-    background-color: #1a1a1a;
-}
-
-[data-bs-theme="forest"] .article-content,
-[data-bs-theme="forest"] .reader-header {
-    background-color: #1a2a1a;
-}
-
-[data-bs-theme="ocean"] .article-content,
-[data-bs-theme="ocean"] .reader-header {
-    background-color: #1a2a3a;
-}
-
-[data-theme="sunset"] .reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="mono"] .article-content,
-[data-theme="mono"] .reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-[data-theme="forest"] .article-content,
-[data-theme="forest"] .reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="ocean"] .article-content,
-[data-theme="ocean"] .reader-header {
-    background-color: var(--mdc-theme-surface);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-}
-
-[data-bs-theme="moon"] .reader-header {
-    background-color: #1a1a1a;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(20px); }
-}
-
-@media (max-width: 768px) {
-    .reader-container {
-        margin: 1rem auto;
-        padding: 10px;
-    }
-
-    .article-content {
-        padding: 1.2rem;
-        border-radius: 16px;
-    }
-
-    .article-title {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .content-body {
-        font-size: 1rem;
-    }
-
-    .reader-header {
-        flex-direction: column;
-        gap: 0.8rem;
-        align-items: flex-start;
-        padding: 0.8rem;
-    }
+.reader-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: clamp(40px, 6vw, 64px);
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
 }
 </style>
+
+<script>
+(function () {
+    const body = document.getElementById('reader-body');
+    const words = body.innerText.split(/\s+/).filter(Boolean).length;
+    document.getElementById('reader-time').textContent = `${Math.max(1, Math.round(words / 230))} min read`;
+
+    const bar = document.getElementById('reader-progress-bar');
+    function onScroll() {
+        const rect = body.getBoundingClientRect();
+        const total = rect.height - window.innerHeight * 0.6;
+        const done = Math.min(1, Math.max(0, -rect.top / Math.max(total, 1)));
+        bar.style.width = (done * 100) + '%';
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+})();
+</script>
 {% endblock %}
