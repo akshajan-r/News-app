@@ -30,14 +30,14 @@
 
 | | |
 |---|---|
-| **Personal front page** | Recommendations shaped by the stories you open and finish, with a match score on each one. |
+| **Personal front page** | Recommendations shaped by the stories you open and finish, with a match score and a tone label (positive, neutral or negative, from sentiment analysis) on each one. |
 | **Reader mode** | Every article opens as clean text in a reading layout. No pop-ups, autoplay or cookie walls. |
 | **Search and sections** | Search today's headlines by keyword, or browse Business, Entertainment, Health, Science, Sports and Technology. |
 | **Saved stories** | Bookmark anything to read later, from the front page or the reader. |
 | **History and stats** | See everything you've read, plus your reading streak, busiest day, peak hour and favourite sections. |
 | **Streak themes** | Dark and Light from day one. Mono, Sunset, Ocean and Forest unlock as your daily reading streak grows (1, 7, 14 and 30 days). |
 | **Guest mode** | Browse today's headlines without an account. |
-| **Admin tools** | The first account on a fresh database becomes admin, with user management, article and source stats, and a site-wide theme setting. |
+| **Admin tools** | One admin account (set by `ADMIN_USERNAME`) gets user management, article and source stats, and a site-wide theme setting. Nobody else can be made an admin. |
 
 <p align="center">
   <img src="docs/signin-light.png" alt="Sign-in page in the light theme" width="900">
@@ -91,6 +91,7 @@ local SQLite file at `instance/newsapp.db`.
 | `NEWS_API_KEY` | Yes | Fetching headlines from NewsAPI |
 | `SECRET_KEY` | In production | Signs sessions and CSRF tokens. Defaults to `dev` locally. |
 | `DATABASE_URL` | In production | Postgres connection string. Defaults to local SQLite. |
+| `ADMIN_USERNAME` | No | The one account allowed to be an admin. Defaults to `aks`. |
 
 ## Deploy your own on Render (free)
 
@@ -106,9 +107,10 @@ which doesn't expire.
    reads `render.yaml` and asks for:
    - `NEWS_API_KEY`: your key from newsapi.org
    - `DATABASE_URL`: the Neon connection string
-3. **Deploy.** Render installs the requirements, creates the tables and starts
-   the site. `SECRET_KEY` is generated for you.
-4. **Sign up straight away.** The first account on a fresh database becomes the admin.
+3. **Deploy.** Render installs the requirements and creates the tables during the
+   build, then starts the site. `SECRET_KEY` is generated for you.
+4. **Claim the admin account.** Sign up with the username set in `ADMIN_USERNAME`
+   (`aks` unless you change it in `render.yaml`). That account is the only admin.
 
 Every push to the deployed branch redeploys automatically.
 
